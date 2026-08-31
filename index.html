@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Encuesta de Atención — Clínica Versalles</title>
+<style>
+  :root {
+    --azul: #2563eb;
+    --azul-oscuro: #1e40af;
+    --verde: #10b981;
+    --fondo: #f5f7fa;
+    --texto: #0f2447;
+    --gris: #54627a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--fondo);
+    color: var(--texto);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  header {
+    padding: 24px 16px 8px;
+    text-align: center;
+  }
+  header img { height: 52px; width: auto; }
+  main {
+    width: 100%;
+    max-width: 480px;
+    padding: 16px;
+    flex: 1;
+  }
+  .paso { display: none; animation: entrar .25s ease; }
+  .paso.activo { display: block; }
+  @keyframes entrar { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  h1 {
+    font-size: 1.35rem;
+    text-align: center;
+    margin: 16px 0 24px;
+    line-height: 1.35;
+  }
+  .sub { text-align: center; color: var(--gris); margin: -16px 0 24px; font-size: .95rem; }
+
+  .btn-servicio {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    padding: 22px 20px;
+    margin-bottom: 14px;
+    border: 2px solid #dde4ec;
+    border-radius: 16px;
+    background: #fff;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--texto);
+    cursor: pointer;
+  }
+  .btn-servicio:active { border-color: var(--azul); background: #eff6ff; }
+  .btn-servicio .icono { font-size: 1.8rem; }
+
+  .grid-personal {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .card-persona {
+    background: #fff;
+    border: 2px solid #dde4ec;
+    border-radius: 16px;
+    padding: 18px 10px 14px;
+    text-align: center;
+    cursor: pointer;
+  }
+  .card-persona:active { border-color: var(--azul); background: #eff6ff; }
+  .card-persona img, .card-persona .avatar {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, var(--azul), var(--verde));
+  }
+  .card-persona .nombre { font-weight: 600; font-size: .98rem; }
+  .btn-secundario {
+    display: block;
+    width: 100%;
+    margin-top: 16px;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    background: none;
+    color: var(--gris);
+    font-size: 1rem;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .caritas {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .carita {
+    flex: 1;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 0;
+    border-radius: 12px;
+  }
+  .carita .emoji { font-size: 2.4rem; display: block; filter: grayscale(35%); transition: transform .15s; }
+  .carita .etiqueta { font-size: .72rem; color: var(--gris); margin-top: 6px; display: block; }
+  .carita:active .emoji, .carita.sel .emoji { filter: none; transform: scale(1.25); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+  .chip {
+    padding: 10px 16px;
+    border: 2px solid #dde4ec;
+    border-radius: 999px;
+    background: #fff;
+    font-size: .92rem;
+    color: var(--texto);
+    cursor: pointer;
+  }
+  .chip.sel { border-color: var(--azul); background: #dbeafe; font-weight: 600; }
+
+  textarea {
+    width: 100%;
+    min-height: 96px;
+    padding: 14px;
+    border: 2px solid #dde4ec;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-family: inherit;
+    resize: vertical;
+    background: #fff;
+  }
+  textarea:focus { outline: none; border-color: var(--azul); }
+
+  .btn-adjunto {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    padding: 13px;
+    border: 2px dashed #94a1b5;
+    border-radius: 12px;
+    background: #fff;
+    color: var(--gris);
+    font-size: .95rem;
+    cursor: pointer;
+  }
+  .adjuntos-lista { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+  .adjuntos-lista .mini {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #dde4ec;
+    background: #eef2f7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+  }
+  .adjuntos-lista .mini img { width: 100%; height: 100%; object-fit: cover; }
+  .adjuntos-lista .mini .quitar {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0,0,0,.55);
+    color: #fff;
+    font-size: .7rem;
+    line-height: 20px;
+    cursor: pointer;
+  }
+  .btn-principal {
+    display: block;
+    width: 100%;
+    margin-top: 20px;
+    padding: 16px;
+    border: none;
+    border-radius: 14px;
+    background: var(--azul);
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-principal:disabled { opacity: .5; }
+  .btn-principal:active { background: var(--azul-oscuro); }
+
+  .gracias { text-align: center; padding-top: 40px; }
+  .gracias .check {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: var(--verde);
+    color: #fff;
+    font-size: 2.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+  }
+  .error-msg {
+    display: none;
+    text-align: center;
+    color: #b91c1c;
+    background: #fef2f2;
+    border-radius: 10px;
+    padding: 12px;
+    margin-top: 14px;
+    font-size: .92rem;
+  }
+  footer { padding: 16px; color: var(--gris); font-size: .78rem; text-align: center; }
+</style>
+</head>
+<body>
+<header><img src="https://cvijxlgdshfwqszbqgkr.supabase.co/storage/v1/object/public/encuesta-fotos/logo-versalles.png" alt="Clínica Versalles"></header>
+<main>
+
+  <!-- Paso 1: servicio -->
+  <section class="paso" id="paso-servicio">
+    <h1>¿Dónde te atendieron hoy?</h1>
+    <button class="btn-servicio" onclick="elegirServicio('recepcion')"><span class="icono">🏥</span> Recepción / Admisión</button>
+    <button class="btn-servicio" onclick="elegirServicio('emergencia')"><span class="icono">🚑</span> Emergencia</button>
+  </section>
+
+  <!-- Paso 2: persona -->
+  <section class="paso" id="paso-persona">
+    <h1>¿Quién te atendió?</h1>
+    <p class="sub">Toca la foto de la persona</p>
+    <div class="grid-personal" id="grid-personal"></div>
+    <button class="btn-secundario" onclick="elegirPersona(null)">No recuerdo / prefiero no decir</button>
+  </section>
+
+  <!-- Paso 3: calificación -->
+  <section class="paso" id="paso-calificacion">
+    <h1 id="titulo-calificacion">¿Cómo fue la atención?</h1>
+    <div class="caritas" id="caritas"></div>
+  </section>
+
+  <!-- Paso 4: detalle -->
+  <section class="paso" id="paso-detalle">
+    <h1 id="titulo-detalle">¿Qué podemos mejorar?</h1>
+    <div class="chips" id="chips" style="display:none">
+      <button class="chip" data-motivo="espera">Me hicieron esperar mucho</button>
+      <button class="chip" data-motivo="trato">Trato descortés</button>
+      <button class="chip" data-motivo="informacion">No me explicaron bien</button>
+      <button class="chip" data-motivo="seguro_pago">Problemas con seguro / pago</button>
+      <button class="chip" data-motivo="otro">Otro</button>
+    </div>
+    <textarea id="comentario" maxlength="1000" placeholder="Cuéntanos más (opcional)"></textarea>
+    <input type="file" id="archivo" accept="image/*,video/*" multiple hidden>
+    <button class="btn-adjunto" onclick="document.getElementById('archivo').click()">📷 Agregar foto o video (opcional)</button>
+    <div class="adjuntos-lista" id="adjuntos-lista"></div>
+    <button class="btn-principal" id="btn-enviar" onclick="enviar()">Enviar</button>
+    <div class="error-msg" id="error-envio">No se pudo enviar. Revisa tu conexión e intenta de nuevo.</div>
+  </section>
+
+  <!-- Paso 5: gracias -->
+  <section class="paso" id="paso-gracias">
+    <div class="gracias">
+      <div class="check">✓</div>
+      <h1>¡Gracias por tu opinión!</h1>
+      <p class="sub">Nos ayuda a atenderte mejor cada día.</p>
+    </div>
+  </section>
+
+</main>
+<footer>Clínica Versalles · Encuesta anónima de satisfacción</footer>
+
+<script>
+const SUPABASE_URL = 'https://cvijxlgdshfwqszbqgkr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_SjOE5lvfh0fyyDRHQMc23w_ItvE2Yb4';
+
+const CARITAS = [
+  { valor: 1, emoji: '😡', etiqueta: 'Muy mala' },
+  { valor: 2, emoji: '😕', etiqueta: 'Mala' },
+  { valor: 3, emoji: '😐', etiqueta: 'Regular' },
+  { valor: 4, emoji: '🙂', etiqueta: 'Buena' },
+  { valor: 5, emoji: '😍', etiqueta: 'Excelente' },
+];
+
+const estado = { servicio: null, personal: null, calificacion: null, motivos: [] };
+let personalCache = [];
+
+function mostrar(id) {
+  document.querySelectorAll('.paso').forEach(p => p.classList.remove('activo'));
+  document.getElementById(id).classList.add('activo');
+  window.scrollTo(0, 0);
+}
+
+function yaRespondio() {
+  try {
+    const t = localStorage.getItem('encuesta_enviada');
+    return t && (Date.now() - Number(t)) < 4 * 3600 * 1000;
+  } catch { return false; }
+}
+
+async function elegirServicio(servicio) {
+  estado.servicio = servicio;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/encuesta_personal?select=id,nombre,foto_url&servicio=eq.${servicio}&activo=eq.true&order=orden`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+    });
+    personalCache = res.ok ? await res.json() : [];
+  } catch { personalCache = []; }
+
+  if (!personalCache.length) { elegirPersona(null); return; }
+
+  const grid = document.getElementById('grid-personal');
+  grid.innerHTML = '';
+  for (const p of personalCache) {
+    const card = document.createElement('button');
+    card.className = 'card-persona';
+    card.onclick = () => elegirPersona(p);
+    const iniciales = p.nombre.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    card.innerHTML = p.foto_url
+      ? `<img src="${p.foto_url}" alt=""><div class="nombre"></div>`
+      : `<div class="avatar">${iniciales}</div><div class="nombre"></div>`;
+    card.querySelector('.nombre').textContent = p.nombre;
+    grid.appendChild(card);
+  }
+  mostrar('paso-persona');
+}
+
+function elegirPersona(p) {
+  estado.personal = p;
+  const nombre = p ? p.nombre.split(' ')[0] : null;
+  document.getElementById('titulo-calificacion').textContent =
+    nombre ? `¿Cómo fue la atención de ${nombre}?` : '¿Cómo fue la atención que recibiste?';
+  mostrar('paso-calificacion');
+}
+
+function elegirCalificacion(valor, boton) {
+  estado.calificacion = valor;
+  document.querySelectorAll('.carita').forEach(c => c.classList.remove('sel'));
+  boton.classList.add('sel');
+  const negativa = valor <= 3;
+  document.getElementById('chips').style.display = negativa ? 'flex' : 'none';
+  document.getElementById('titulo-detalle').textContent =
+    negativa ? '¿Qué podemos mejorar?' : '¿Algo más que quieras contarnos?';
+  document.getElementById('comentario').placeholder =
+    negativa ? 'Cuéntanos qué pasó (opcional)' : 'Sugerencias o felicitaciones (opcional)';
+  setTimeout(() => mostrar('paso-detalle'), 250);
+}
+
+document.getElementById('caritas').innerHTML = CARITAS.map(c =>
+  `<button class="carita" onclick="elegirCalificacion(${c.valor}, this)">
+     <span class="emoji">${c.emoji}</span><span class="etiqueta">${c.etiqueta}</span>
+   </button>`).join('');
+
+document.getElementById('chips').addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  chip.classList.toggle('sel');
+  const m = chip.dataset.motivo;
+  estado.motivos = chip.classList.contains('sel')
+    ? [...estado.motivos, m]
+    : estado.motivos.filter(x => x !== m);
+});
+
+// Adjuntos: fotos se comprimen en el navegador; videos van tal cual (máx 25MB)
+const MAX_ADJUNTOS = 3;
+const MAX_VIDEO = 25 * 1024 * 1024;
+let adjuntos = []; // { file (Blob), tipo, ext, previewUrl }
+
+document.getElementById('archivo').addEventListener('change', async e => {
+  for (const f of e.target.files) {
+    if (adjuntos.length >= MAX_ADJUNTOS) break;
+    if (f.type.startsWith('image/')) {
+      const blob = await comprimirImagen(f);
+      adjuntos.push({ file: blob, tipo: 'image/jpeg', ext: 'jpg', previewUrl: URL.createObjectURL(blob) });
+    } else if (f.type.startsWith('video/')) {
+      if (f.size > MAX_VIDEO) { alert('El video es muy pesado (máx 25MB). Graba uno más corto.'); continue; }
+      const ext = (f.name.split('.').pop() || 'mp4').toLowerCase();
+      adjuntos.push({ file: f, tipo: f.type, ext, previewUrl: null });
+    }
+  }
+  e.target.value = '';
+  pintarAdjuntos();
+});
+
+function comprimirImagen(file) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1280;
+      const escala = Math.min(1, MAX / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * escala);
+      canvas.height = Math.round(img.height * escala);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(b => resolve(b || file), 'image/jpeg', 0.72);
+      URL.revokeObjectURL(img.src);
+    };
+    img.onerror = () => resolve(file);
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function pintarAdjuntos() {
+  document.getElementById('adjuntos-lista').innerHTML = adjuntos.map((a, i) => `
+    <div class="mini">
+      ${a.previewUrl ? `<img src="${a.previewUrl}">` : '🎬'}
+      <button class="quitar" onclick="adjuntos.splice(${i},1);pintarAdjuntos()">✕</button>
+    </div>`).join('');
+}
+
+async function subirAdjuntos() {
+  const urls = [];
+  for (const a of adjuntos) {
+    const nombre = `adjuntos/${crypto.randomUUID()}.${a.ext}`;
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/encuesta-fotos/${nombre}`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': a.tipo },
+      body: a.file,
+    });
+    if (res.ok) urls.push(`${SUPABASE_URL}/storage/v1/object/public/encuesta-fotos/${nombre}`);
+  }
+  return urls;
+}
+
+async function enviar() {
+  const btn = document.getElementById('btn-enviar');
+  btn.disabled = true;
+  btn.textContent = adjuntos.length ? 'Enviando…' : 'Enviar';
+  document.getElementById('error-envio').style.display = 'none';
+  try {
+    const urlsAdjuntos = await subirAdjuntos();
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/encuesta_respuestas`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify({
+        servicio: estado.servicio,
+        personal_id: estado.personal ? estado.personal.id : null,
+        calificacion: estado.calificacion,
+        motivos: estado.calificacion <= 3 ? estado.motivos : [],
+        comentario: document.getElementById('comentario').value.trim() || null,
+        adjuntos: urlsAdjuntos,
+      }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    try { localStorage.setItem('encuesta_enviada', String(Date.now())); } catch {}
+    mostrar('paso-gracias');
+  } catch (err) {
+    document.getElementById('error-envio').style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Enviar';
+  }
+}
+
+// Arranque: QR puede traer ?s=recepcion o ?s=emergencia para saltar el paso 1
+(function iniciar() {
+  if (yaRespondio()) { mostrar('paso-gracias'); return; }
+  const s = new URLSearchParams(location.search).get('s');
+  if (s === 'recepcion' || s === 'emergencia') { elegirServicio(s); }
+  else { mostrar('paso-servicio'); }
+})();
+</script>
+</body>
+</html>

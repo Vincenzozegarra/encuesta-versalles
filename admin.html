@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel de Encuestas — Clínica Versalles</title>
+<style>
+  :root {
+    --azul: #2563eb;
+    --azul-oscuro: #1e40af;
+    --verde: #10b981;
+    --fondo: #f5f7fa;
+    --texto: #0f2447;
+    --gris: #54627a;
+    --rojo: #dc2626;
+    --ambar: #d97706;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--fondo);
+    color: var(--texto);
+    min-height: 100vh;
+  }
+  header {
+    background: #fff;
+    border-bottom: 1px solid #dde4ec;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  header img { height: 40px; }
+  header h1 { font-size: 1.05rem; font-weight: 600; }
+  main { max-width: 960px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  /* Login */
+  #login { max-width: 340px; margin: 80px auto; text-align: center; }
+  #login input {
+    width: 100%;
+    padding: 14px;
+    font-size: 1.1rem;
+    border: 2px solid #dde4ec;
+    border-radius: 12px;
+    text-align: center;
+    margin: 16px 0;
+  }
+  #login button {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    background: var(--azul);
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  #login .error { color: var(--rojo); margin-top: 12px; display: none; }
+
+  #panel { display: none; }
+  .filtros { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+  .filtro {
+    padding: 8px 16px;
+    border: 2px solid #dde4ec;
+    border-radius: 999px;
+    background: #fff;
+    cursor: pointer;
+    font-size: .9rem;
+  }
+  .filtro.sel { border-color: var(--azul); background: #dbeafe; font-weight: 600; }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .kpi { background: #fff; border-radius: 14px; padding: 16px; border: 1px solid #dde4ec; }
+  .kpi .valor { font-size: 1.9rem; font-weight: 800; }
+  .kpi .nombre { color: var(--gris); font-size: .82rem; margin-top: 4px; }
+
+  h2 { font-size: 1.05rem; margin: 26px 0 12px; }
+  .tabla { background: #fff; border-radius: 14px; border: 1px solid #dde4ec; overflow: hidden; }
+  .fila {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #eef2f7;
+    flex-wrap: wrap;
+  }
+  .fila:last-child { border-bottom: none; }
+  .fila .quien { font-weight: 600; flex: 1; min-width: 140px; }
+  .fila .barra-fondo { flex: 2; height: 10px; background: #eef2f7; border-radius: 999px; min-width: 120px; }
+  .fila .barra { height: 100%; border-radius: 999px; background: var(--verde); }
+  .fila .prom { font-weight: 700; width: 46px; text-align: right; }
+  .fila .n { color: var(--gris); font-size: .82rem; width: 80px; text-align: right; }
+
+  .comentario { padding: 14px 16px; border-bottom: 1px solid #eef2f7; }
+  .comentario:last-child { border-bottom: none; }
+  .comentario .meta { font-size: .8rem; color: var(--gris); margin-bottom: 4px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .nota { font-weight: 700; padding: 1px 8px; border-radius: 999px; font-size: .78rem; color: #fff; }
+  .nota.mala { background: var(--rojo); }
+  .nota.media { background: var(--ambar); }
+  .nota.buena { background: var(--verde); }
+  .motivo-tag { background: #fef3c7; color: #92400e; border-radius: 999px; padding: 1px 8px; font-size: .75rem; }
+  .adjuntos-admin { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .adjuntos-admin img { height: 80px; border-radius: 8px; border: 1px solid #dde4ec; }
+  .adjuntos-admin a.video {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border: 1px solid #dde4ec; border-radius: 8px;
+    background: #eef2f7; color: var(--texto); text-decoration: none; font-size: .85rem;
+  }
+  .vacio { padding: 24px; text-align: center; color: var(--gris); }
+</style>
+</head>
+<body>
+<header>
+  <img src="https://cvijxlgdshfwqszbqgkr.supabase.co/storage/v1/object/public/encuesta-fotos/logo-versalles.png" alt="Clínica Versalles">
+  <h1>Panel de Encuestas de Atención</h1>
+</header>
+<main>
+
+  <div id="login">
+    <h2>Ingresa la clave del panel</h2>
+    <input type="password" id="clave" placeholder="Clave" onkeydown="if(event.key==='Enter')entrar()">
+    <button onclick="entrar()">Entrar</button>
+    <div class="error" id="login-error">Clave incorrecta o error de conexión.</div>
+  </div>
+
+  <div id="panel">
+    <div class="filtros">
+      <button class="filtro sel" data-f="todos">Todos</button>
+      <button class="filtro" data-f="recepcion">Recepción</button>
+      <button class="filtro" data-f="emergencia">Emergencia</button>
+      <button class="filtro" data-f="7d">Últimos 7 días</button>
+    </div>
+
+    <div class="kpis" id="kpis"></div>
+
+    <h2>Calificación por persona</h2>
+    <div class="tabla" id="ranking"></div>
+
+    <h2>Motivos de quejas (notas 1-3)</h2>
+    <div class="tabla" id="motivos"></div>
+
+    <h2>Comentarios recientes</h2>
+    <div class="tabla" id="comentarios"></div>
+  </div>
+
+</main>
+<script>
+const SUPABASE_URL = 'https://cvijxlgdshfwqszbqgkr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_SjOE5lvfh0fyyDRHQMc23w_ItvE2Yb4';
+
+const MOTIVOS_NOMBRE = {
+  espera: 'Me hicieron esperar mucho',
+  trato: 'Trato descortés',
+  informacion: 'No me explicaron bien',
+  seguro_pago: 'Problemas con seguro / pago',
+  otro: 'Otro',
+};
+
+let todas = [];
+let filtro = 'todos';
+
+async function entrar() {
+  const clave = document.getElementById('clave').value;
+  document.getElementById('login-error').style.display = 'none';
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/encuesta_admin`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ p_clave: clave }),
+    });
+    if (!res.ok) throw new Error('clave');
+    const data = await res.json();
+    todas = data.respuestas || [];
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('panel').style.display = 'block';
+    render();
+  } catch {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+
+document.querySelector('.filtros').addEventListener('click', e => {
+  const b = e.target.closest('.filtro');
+  if (!b) return;
+  document.querySelectorAll('.filtro').forEach(f => f.classList.remove('sel'));
+  b.classList.add('sel');
+  filtro = b.dataset.f;
+  render();
+});
+
+function filtradas() {
+  const hace7d = Date.now() - 7 * 24 * 3600 * 1000;
+  return todas.filter(r => {
+    if (filtro === 'recepcion' || filtro === 'emergencia') return r.servicio === filtro;
+    if (filtro === '7d') return new Date(r.creado_en).getTime() >= hace7d;
+    return true;
+  });
+}
+
+const prom = arr => arr.length ? (arr.reduce((s, r) => s + r.calificacion, 0) / arr.length) : 0;
+const esc = t => { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
+
+function render() {
+  const rs = filtradas();
+
+  const negativas = rs.filter(r => r.calificacion <= 2).length;
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi"><div class="valor">${rs.length}</div><div class="nombre">Respuestas</div></div>
+    <div class="kpi"><div class="valor">${prom(rs).toFixed(1)}</div><div class="nombre">Promedio (1-5)</div></div>
+    <div class="kpi"><div class="valor">${rs.length ? Math.round(negativas / rs.length * 100) : 0}%</div><div class="nombre">Notas 1-2 (críticas)</div></div>
+    <div class="kpi"><div class="valor">${rs.filter(r => r.comentario).length}</div><div class="nombre">Con comentario</div></div>`;
+
+  // Ranking por persona
+  const porPersona = {};
+  for (const r of rs) {
+    const k = r.personal_nombre || 'Sin identificar';
+    (porPersona[k] = porPersona[k] || []).push(r);
+  }
+  const ranking = Object.entries(porPersona)
+    .map(([nombre, arr]) => ({ nombre, p: prom(arr), n: arr.length }))
+    .sort((a, b) => a.p - b.p);
+  document.getElementById('ranking').innerHTML = ranking.length
+    ? ranking.map(x => `
+      <div class="fila">
+        <div class="quien">${esc(x.nombre)}</div>
+        <div class="barra-fondo"><div class="barra" style="width:${x.p / 5 * 100}%; background:${x.p < 3 ? 'var(--rojo)' : x.p < 4 ? 'var(--ambar)' : 'var(--verde)'}"></div></div>
+        <div class="prom">${x.p.toFixed(1)}</div>
+        <div class="n">${x.n} resp.</div>
+      </div>`).join('')
+    : '<div class="vacio">Sin respuestas aún</div>';
+
+  // Motivos
+  const conteo = {};
+  for (const r of rs) for (const m of (r.motivos || [])) conteo[m] = (conteo[m] || 0) + 1;
+  const motivos = Object.entries(conteo).sort((a, b) => b[1] - a[1]);
+  const maxM = motivos[0] ? motivos[0][1] : 1;
+  document.getElementById('motivos').innerHTML = motivos.length
+    ? motivos.map(([m, n]) => `
+      <div class="fila">
+        <div class="quien">${esc(MOTIVOS_NOMBRE[m] || m)}</div>
+        <div class="barra-fondo"><div class="barra" style="width:${n / maxM * 100}%; background:var(--ambar)"></div></div>
+        <div class="n">${n}</div>
+      </div>`).join('')
+    : '<div class="vacio">Sin quejas registradas</div>';
+
+  // Comentarios (incluye respuestas que solo traen foto/video)
+  const conComentario = rs.filter(r => r.comentario || (r.adjuntos || []).length).slice(0, 50);
+  document.getElementById('comentarios').innerHTML = conComentario.length
+    ? conComentario.map(r => {
+        const fecha = new Date(r.creado_en).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+        const claseNota = r.calificacion <= 2 ? 'mala' : r.calificacion === 3 ? 'media' : 'buena';
+        const tags = (r.motivos || []).map(m => `<span class="motivo-tag">${esc(MOTIVOS_NOMBRE[m] || m)}</span>`).join('');
+        return `
+        <div class="comentario">
+          <div class="meta">
+            <span class="nota ${claseNota}">${r.calificacion}/5</span>
+            <span>${r.servicio === 'recepcion' ? 'Recepción' : 'Emergencia'}</span>
+            ${r.personal_nombre ? `<span>· ${esc(r.personal_nombre)}</span>` : ''}
+            <span>· ${fecha}</span>
+            ${tags}
+          </div>
+          <div>${r.comentario ? esc(r.comentario) : ''}</div>
+          ${(r.adjuntos || []).length ? `<div class="adjuntos-admin">${r.adjuntos.map(u =>
+            /\.(jpg|jpeg|png|webp)$/i.test(u)
+              ? `<a href="${esc(u)}" target="_blank"><img src="${esc(u)}"></a>`
+              : `<a class="video" href="${esc(u)}" target="_blank">🎬 Ver video</a>`
+          ).join('')}</div>` : ''}
+        </div>`;
+      }).join('')
+    : '<div class="vacio">Sin comentarios aún</div>';
+}
+</script>
+</body>
+</html>
