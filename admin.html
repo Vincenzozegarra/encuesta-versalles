@@ -134,6 +134,9 @@
 
     <div class="kpis" id="kpis"></div>
 
+    <h2>Promedio por aspecto</h2>
+    <div class="tabla" id="aspectos"></div>
+
     <h2>Calificación por persona</h2>
     <div class="tabla" id="ranking"></div>
 
@@ -149,6 +152,7 @@
 const SUPABASE_URL = 'https://cvijxlgdshfwqszbqgkr.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_SjOE5lvfh0fyyDRHQMc23w_ItvE2Yb4';
 
+const ROL_NOMBRE = { recepcion: 'Admisión', enfermeria: 'Enfermería', medico: 'Médico' };
 const MOTIVOS_NOMBRE = {
   espera: 'Me hicieron esperar mucho',
   trato: 'Trato descortés',
@@ -213,7 +217,27 @@ function render() {
     <div class="kpi"><div class="valor">${rs.length}</div><div class="nombre">Respuestas</div></div>
     <div class="kpi"><div class="valor">${prom(rs).toFixed(1)}</div><div class="nombre">Promedio (1-5)</div></div>
     <div class="kpi"><div class="valor">${rs.length ? Math.round(negativas / rs.length * 100) : 0}%</div><div class="nombre">Notas 1-2 (críticas)</div></div>
-    <div class="kpi"><div class="valor">${rs.filter(r => r.comentario).length}</div><div class="nombre">Con comentario</div></div>`;
+    <div class="kpi"><div class="valor">${rs.filter(r => r.comentario).length}</div><div class="nombre">Con comentario</div></div>
+    <div class="kpi"><div class="valor">${(() => { const c = rs.filter(r => r.recomienda !== null && r.recomienda !== undefined); return c.length ? Math.round(c.filter(r => r.recomienda).length / c.length * 100) + '%' : '—'; })()}</div><div class="nombre">Recomendarían la clínica</div></div>`;
+
+  // Promedio por aspecto
+  const ASPECTOS = [
+    ['aspecto_trato', 'Trato y amabilidad'],
+    ['aspecto_rapidez', 'Rapidez de la atención'],
+    ['aspecto_informacion', 'Claridad de la información'],
+  ];
+  document.getElementById('aspectos').innerHTML = ASPECTOS.map(([campo, nombre]) => {
+    const con = rs.filter(r => r[campo]);
+    if (!con.length) return `<div class="fila"><div class="quien">${nombre}</div><div class="n">sin datos</div></div>`;
+    const p = con.reduce((s, r) => s + r[campo], 0) / con.length;
+    return `
+      <div class="fila">
+        <div class="quien">${nombre}</div>
+        <div class="barra-fondo"><div class="barra" style="width:${p / 5 * 100}%; background:${p < 3 ? 'var(--rojo)' : p < 4 ? 'var(--ambar)' : 'var(--verde)'}"></div></div>
+        <div class="prom">${p.toFixed(1)}</div>
+        <div class="n">${con.length} resp.</div>
+      </div>`;
+  }).join('');
 
   // Ranking por persona
   const porPersona = {};
@@ -259,7 +283,8 @@ function render() {
         <div class="comentario">
           <div class="meta">
             <span class="nota ${claseNota}">${r.calificacion}/5</span>
-            <span>${r.servicio === 'recepcion' ? 'Recepción' : 'Emergencia'}</span>
+            <span>${r.servicio === 'recepcion' ? 'Recepción' : 'Emergencia'}${r.servicio === 'emergencia' && r.rol ? ' (' + (ROL_NOMBRE[r.rol] || r.rol) + ')' : ''}</span>
+            ${r.recomienda === false ? '<span class="motivo-tag" style="background:#fee2e2;color:#991b1b">No recomendaría</span>' : ''}
             ${r.personal_nombre ? `<span>· ${esc(r.personal_nombre)}</span>` : ''}
             <span>· ${fecha}</span>
             ${tags}

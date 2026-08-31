@@ -148,6 +148,28 @@
   }
   textarea:focus { outline: none; border-color: var(--azul); }
 
+  .aspecto {
+    background: #fff;
+    border: 2px solid #dde4ec;
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+  .aspecto-nombre { font-weight: 600; margin-bottom: 10px; }
+  .aspecto-caritas { display: flex; justify-content: space-between; }
+  .aspecto-caritas button {
+    background: none;
+    border: none;
+    font-size: 1.7rem;
+    padding: 4px 8px;
+    cursor: pointer;
+    filter: grayscale(60%);
+    border-radius: 10px;
+  }
+  .aspecto-caritas button.sel { filter: none; transform: scale(1.2); background: #dbeafe; }
+  .recomienda { margin-top: 16px; }
+  .recomienda-botones { display: flex; gap: 10px; }
+  .recomienda-botones .chip { flex: 1; text-align: center; padding: 12px; font-size: 1rem; }
   .btn-adjunto {
     display: block;
     width: 100%;
@@ -242,6 +264,14 @@
     <button class="btn-servicio" onclick="elegirServicio('emergencia')"><span class="icono">🚑</span> Emergencia</button>
   </section>
 
+  <!-- Paso 1b: rol (solo emergencia) -->
+  <section class="paso" id="paso-rol">
+    <h1>¿A quién quieres calificar?</h1>
+    <button class="btn-servicio" onclick="elegirRol('recepcion')"><span class="icono">🪪</span> Admisión / Recepción</button>
+    <button class="btn-servicio" onclick="elegirRol('enfermeria')"><span class="icono">💉</span> Enfermería</button>
+    <button class="btn-servicio" onclick="elegirRol('medico')"><span class="icono">🩺</span> Médico</button>
+  </section>
+
   <!-- Paso 2: persona -->
   <section class="paso" id="paso-persona">
     <h1>¿Quién te atendió?</h1>
@@ -256,6 +286,25 @@
     <div class="caritas" id="caritas"></div>
   </section>
 
+  <!-- Paso 3b: aspectos -->
+  <section class="paso" id="paso-aspectos">
+    <h1>Cuéntanos un poco más</h1>
+    <div class="aspecto" data-aspecto="trato">
+      <div class="aspecto-nombre">El trato y la amabilidad</div>
+      <div class="aspecto-caritas"></div>
+    </div>
+    <div class="aspecto" data-aspecto="rapidez">
+      <div class="aspecto-nombre">La rapidez de la atención</div>
+      <div class="aspecto-caritas"></div>
+    </div>
+    <div class="aspecto" data-aspecto="informacion">
+      <div class="aspecto-nombre">La claridad de la información</div>
+      <div class="aspecto-caritas"></div>
+    </div>
+    <button class="btn-principal" onclick="irADetalle()">Continuar</button>
+    <button class="btn-secundario" onclick="irADetalle()">Omitir</button>
+  </section>
+
   <!-- Paso 4: detalle -->
   <section class="paso" id="paso-detalle">
     <h1 id="titulo-detalle">¿Qué podemos mejorar?</h1>
@@ -267,6 +316,13 @@
       <button class="chip" data-motivo="otro">Otro</button>
     </div>
     <textarea id="comentario" maxlength="1000" placeholder="Cuéntanos más (opcional)"></textarea>
+    <div class="recomienda">
+      <div class="aspecto-nombre">¿Recomendarías la Clínica Versalles a un familiar o amigo?</div>
+      <div class="recomienda-botones">
+        <button class="chip" data-rec="si" onclick="elegirRecomienda(true, this)">👍 Sí</button>
+        <button class="chip" data-rec="no" onclick="elegirRecomienda(false, this)">👎 No</button>
+      </div>
+    </div>
     <input type="file" id="archivo" accept="image/*,video/*" multiple hidden>
     <button class="btn-adjunto" onclick="document.getElementById('archivo').click()">📷 Agregar foto o video (opcional)</button>
     <div class="adjuntos-lista" id="adjuntos-lista"></div>
@@ -298,7 +354,10 @@ const CARITAS = [
   { valor: 5, emoji: '😍', etiqueta: 'Excelente' },
 ];
 
-const estado = { servicio: null, personal: null, calificacion: null, motivos: [] };
+const estado = {
+  servicio: null, rol: null, personal: null, calificacion: null, motivos: [],
+  aspectos: { trato: null, rapidez: null, informacion: null }, recomienda: null,
+};
 let personalCache = [];
 
 function mostrar(id) {
@@ -314,10 +373,16 @@ function yaRespondio() {
   } catch { return false; }
 }
 
-async function elegirServicio(servicio) {
+function elegirServicio(servicio) {
   estado.servicio = servicio;
+  if (servicio === 'emergencia') { mostrar('paso-rol'); }
+  else { elegirRol('recepcion'); }
+}
+
+async function elegirRol(rol) {
+  estado.rol = rol;
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/encuesta_personal?select=id,nombre,foto_url&servicio=eq.${servicio}&activo=eq.true&order=orden`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/encuesta_personal?select=id,nombre,foto_url&servicio=eq.${estado.servicio}&rol=eq.${rol}&activo=eq.true&order=orden`, {
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
     });
     personalCache = res.ok ? await res.json() : [];
@@ -359,7 +424,29 @@ function elegirCalificacion(valor, boton) {
     negativa ? '¿Qué podemos mejorar?' : '¿Algo más que quieras contarnos?';
   document.getElementById('comentario').placeholder =
     negativa ? 'Cuéntanos qué pasó (opcional)' : 'Sugerencias o felicitaciones (opcional)';
-  setTimeout(() => mostrar('paso-detalle'), 250);
+  setTimeout(() => mostrar('paso-aspectos'), 250);
+}
+
+// Aspectos: mini-caritas 1-5 por fila
+document.querySelectorAll('.aspecto').forEach(div => {
+  const clave = div.dataset.aspecto;
+  const cont = div.querySelector('.aspecto-caritas');
+  cont.innerHTML = CARITAS.map(c => `<button data-v="${c.valor}">${c.emoji}</button>`).join('');
+  cont.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    estado.aspectos[clave] = Number(b.dataset.v);
+    cont.querySelectorAll('button').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel');
+  });
+});
+
+function irADetalle() { mostrar('paso-detalle'); }
+
+function elegirRecomienda(valor, boton) {
+  estado.recomienda = valor;
+  document.querySelectorAll('.recomienda-botones .chip').forEach(c => c.classList.remove('sel'));
+  boton.classList.add('sel');
 }
 
 document.getElementById('caritas').innerHTML = CARITAS.map(c =>
@@ -455,11 +542,16 @@ async function enviar() {
       },
       body: JSON.stringify({
         servicio: estado.servicio,
+        rol: estado.rol,
         personal_id: estado.personal ? estado.personal.id : null,
         calificacion: estado.calificacion,
         motivos: estado.calificacion <= 3 ? estado.motivos : [],
         comentario: document.getElementById('comentario').value.trim() || null,
         adjuntos: urlsAdjuntos,
+        aspecto_trato: estado.aspectos.trato,
+        aspecto_rapidez: estado.aspectos.rapidez,
+        aspecto_informacion: estado.aspectos.informacion,
+        recomienda: estado.recomienda,
       }),
     });
     if (!res.ok) throw new Error(await res.text());
