@@ -40,20 +40,23 @@ En Supabase → Table Editor → `encuesta_personal`:
 
 Para pausar a alguien (vacaciones, cese): poner `activo = false`.
 
-## QR por servicio
+## URLs en producción (GitHub Pages)
 
-La URL acepta `?s=` para saltar la primera pregunta:
+- **Encuesta**: https://vincenzozegarra.github.io/encuesta-versalles/
+  - QR Recepción: `?s=recepcion` · QR Emergencia: `?s=emergencia`
+- **Panel de resultados**: https://vincenzozegarra.github.io/encuesta-versalles/admin.html
 
-- Recepción: `https://TU-URL/index.html?s=recepcion`
-- Emergencia: `https://TU-URL/index.html?s=emergencia`
+QRs listos: `qr-recepcion.png` y `qr-emergencia.png`. Carteles imprimibles
+(A4, uno por servicio): abrir `cartel.html` y Archivo → Imprimir.
 
-Generar los QR con cualquier generador cuando esté la URL final.
+Para actualizar la web: editar los HTML y `git push` (repo
+`Vincenzozegarra/encuesta-versalles`); Pages publica solo en ~1 minuto.
 
-## Publicar
+## Fotos y videos de pacientes
 
-Es un sitio estático (3 archivos). Sirve Vercel, Cloudflare Pages o Netlify:
-arrastrar la carpeta y listo. Mientras tanto se puede probar abriendo
-`index.html` directo en el navegador.
+El paciente puede adjuntar hasta 3 archivos. Las fotos se comprimen en su
+navegador (máx 1280px, JPEG 72%). Videos van tal cual con tope de 25MB
+(límite fijado en el bucket `encuesta-fotos`, carpeta `adjuntos/`).
 
 ## Notas
 

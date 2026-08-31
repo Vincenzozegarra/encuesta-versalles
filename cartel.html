@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Carteles QR — Encuesta Clínica Versalles</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #e5e9f0; }
+  .cartel {
+    width: 210mm;
+    height: 297mm;
+    margin: 10mm auto;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10mm;
+    text-align: center;
+    padding: 20mm;
+    page-break-after: always;
+  }
+  .cartel img.logo { height: 26mm; }
+  .cartel h1 { font-size: 13mm; color: #0f2447; line-height: 1.25; }
+  .cartel h2 { font-size: 8mm; color: #2563eb; font-weight: 600; }
+  .cartel img.qr { width: 110mm; height: 110mm; }
+  .cartel .pasos { font-size: 6mm; color: #54627a; line-height: 1.6; }
+  .cartel .caritas { font-size: 12mm; letter-spacing: 6mm; }
+  @media print { body { background: #fff; } .cartel { margin: 0; } }
+</style>
+</head>
+<body>
+
+<div class="cartel">
+  <img class="logo" src="https://cvijxlgdshfwqszbqgkr.supabase.co/storage/v1/object/public/encuesta-fotos/logo-versalles.png" alt="Clínica Versalles">
+  <h1>¿Cómo fue tu atención<br>en Recepción?</h1>
+  <div class="caritas">😡😕😐🙂😍</div>
+  <img class="qr" src="qr-recepcion.png" alt="QR encuesta recepción">
+  <h2>Escanea y cuéntanos en 30 segundos</h2>
+  <p class="pasos">Es anónimo · Tu opinión nos ayuda a atenderte mejor</p>
+</div>
+
+<div class="cartel">
+  <img class="logo" src="https://cvijxlgdshfwqszbqgkr.supabase.co/storage/v1/object/public/encuesta-fotos/logo-versalles.png" alt="Clínica Versalles">
+  <h1>¿Cómo fue tu atención<br>en Emergencia?</h1>
+  <div class="caritas">😡😕😐🙂😍</div>
+  <img class="qr" src="qr-emergencia.png" alt="QR encuesta emergencia">
+  <h2>Escanea y cuéntanos en 30 segundos</h2>
+  <p class="pasos">Es anónimo · Tu opinión nos ayuda a atenderte mejor</p>
+</div>
+
+</body>
+</html>
