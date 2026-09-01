@@ -566,8 +566,10 @@ async function enviar() {
 
 // Arranque: QR puede traer ?s=recepcion o ?s=emergencia para saltar el paso 1
 (function iniciar() {
-  if (yaRespondio()) { mostrar('paso-gracias'); return; }
-  const s = new URLSearchParams(location.search).get('s');
+  const params = new URLSearchParams(location.search);
+  // ?test=1 salta el bloqueo de 4 horas (para probar desde el mismo celular)
+  if (!params.has('test') && yaRespondio()) { mostrar('paso-gracias'); return; }
+  const s = params.get('s');
   if (s === 'recepcion' || s === 'emergencia') { elegirServicio(s); }
   else { mostrar('paso-servicio'); }
 })();
