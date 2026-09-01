@@ -77,11 +77,21 @@
     cursor: pointer;
   }
   .card-persona:active { border-color: var(--azul); background: #eff6ff; }
+  .btn-volver {
+    background: none;
+    border: none;
+    color: var(--gris);
+    font-size: .95rem;
+    cursor: pointer;
+    padding: 8px 0;
+    display: block;
+  }
   .card-persona img, .card-persona .avatar {
     width: 84px;
     height: 84px;
     border-radius: 50%;
     object-fit: cover;
+    object-position: center top;
     margin: 0 auto 10px;
     display: flex;
     align-items: center;
@@ -266,6 +276,7 @@
 
   <!-- Paso 1b: rol (solo emergencia) -->
   <section class="paso" id="paso-rol">
+    <button class="btn-volver" onclick="volver()">← Volver</button>
     <h1>¿A quién quieres calificar?</h1>
     <button class="btn-servicio" onclick="elegirRol('recepcion')"><span class="icono">🪪</span> Admisión / Recepción</button>
     <button class="btn-servicio" onclick="elegirRol('enfermeria')"><span class="icono">💉</span> Enfermería</button>
@@ -274,6 +285,7 @@
 
   <!-- Paso 2: persona -->
   <section class="paso" id="paso-persona">
+    <button class="btn-volver" onclick="volver()">← Volver</button>
     <h1>¿Quién te atendió?</h1>
     <p class="sub">Toca la foto de la persona</p>
     <div class="grid-personal" id="grid-personal"></div>
@@ -282,12 +294,14 @@
 
   <!-- Paso 3: calificación -->
   <section class="paso" id="paso-calificacion">
+    <button class="btn-volver" onclick="volver()">← Volver</button>
     <h1 id="titulo-calificacion">¿Cómo fue la atención?</h1>
     <div class="caritas" id="caritas"></div>
   </section>
 
   <!-- Paso 3b: aspectos -->
   <section class="paso" id="paso-aspectos">
+    <button class="btn-volver" onclick="volver()">← Volver</button>
     <h1>Cuéntanos un poco más</h1>
     <div class="aspecto" data-aspecto="trato">
       <div class="aspecto-nombre">El trato y la amabilidad</div>
@@ -307,6 +321,7 @@
 
   <!-- Paso 4: detalle -->
   <section class="paso" id="paso-detalle">
+    <button class="btn-volver" onclick="volver()">← Volver</button>
     <h1 id="titulo-detalle">¿Qué podemos mejorar?</h1>
     <div class="chips" id="chips" style="display:none">
       <button class="chip" data-motivo="espera">Me hicieron esperar mucho</button>
@@ -336,6 +351,7 @@
       <div class="check">✓</div>
       <h1>¡Gracias por tu opinión!</h1>
       <p class="sub">Nos ayuda a atenderte mejor cada día.</p>
+      <button class="btn-secundario" id="btn-otra" style="display:none" onclick="otraEncuesta()">Responder otra encuesta</button>
     </div>
   </section>
 
@@ -360,10 +376,21 @@ const estado = {
 };
 let personalCache = [];
 
-function mostrar(id) {
+let historial = [];
+
+function mostrar(id, esVolver = false) {
+  const actual = document.querySelector('.paso.activo');
+  if (!esVolver && actual && actual.id !== id) historial.push(actual.id);
   document.querySelectorAll('.paso').forEach(p => p.classList.remove('activo'));
   document.getElementById(id).classList.add('activo');
+  const bv = document.querySelector(`#${id} .btn-volver`);
+  if (bv) bv.style.display = historial.length ? 'block' : 'none';
   window.scrollTo(0, 0);
+}
+
+function volver() {
+  const prev = historial.pop();
+  if (prev) mostrar(prev, true);
 }
 
 function yaRespondio() {
@@ -572,10 +599,19 @@ async function enviar() {
 }
 
 // Arranque: QR puede traer ?s=recepcion o ?s=emergencia para saltar el paso 1
+function otraEncuesta() {
+  try { localStorage.removeItem('encuesta_enviada'); } catch {}
+  location.reload();
+}
+
 (function iniciar() {
   const params = new URLSearchParams(location.search);
-  // ?test=1 salta el bloqueo de 4 horas (para probar desde el mismo celular)
-  if (!params.has('test') && yaRespondio()) { mostrar('paso-gracias'); return; }
+  // Si ya respondió hace poco, mostrar gracias con opción de responder otra
+  if (!params.has('test') && yaRespondio()) {
+    document.getElementById('btn-otra').style.display = 'block';
+    mostrar('paso-gracias');
+    return;
+  }
   const s = params.get('s');
   if (s === 'recepcion' || s === 'emergencia') { elegirServicio(s); }
   else { mostrar('paso-servicio'); }
