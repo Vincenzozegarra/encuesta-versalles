@@ -278,9 +278,9 @@
   <section class="paso" id="paso-rol">
     <button class="btn-volver" onclick="volver()">← Volver</button>
     <h1>¿A quién quieres calificar?</h1>
-    <button class="btn-servicio" onclick="elegirRol('recepcion')"><span class="icono">🪪</span> Admisión / Recepción</button>
-    <button class="btn-servicio" onclick="elegirRol('enfermeria')"><span class="icono">💉</span> Enfermería</button>
-    <button class="btn-servicio" onclick="elegirRol('medico')"><span class="icono">🩺</span> Médico</button>
+    <button class="btn-servicio" data-rol="recepcion" onclick="elegirRol('recepcion')"><span class="icono">🪪</span> Admisión / Recepción</button>
+    <button class="btn-servicio" data-rol="enfermeria" onclick="elegirRol('enfermeria')"><span class="icono">💉</span> Enfermería</button>
+    <button class="btn-servicio" data-rol="medico" onclick="elegirRol('medico')"><span class="icono">🩺</span> Médico</button>
   </section>
 
   <!-- Paso 2: persona -->
@@ -359,7 +359,7 @@
   </section>
 
 </main>
-<footer>Clínica Versalles · Encuesta anónima de satisfacción · v5</footer>
+<footer>Clínica Versalles · Encuesta anónima de satisfacción · v6</footer>
 
 <script>
 const SUPABASE_URL = 'https://cvijxlgdshfwqszbqgkr.supabase.co';
@@ -403,14 +403,20 @@ function yaRespondio() {
   } catch { return false; }
 }
 
-function elegirServicio(servicio) {
+async function elegirServicio(servicio) {
   estado.servicio = servicio;
-  if (servicio === 'emergencia') { mostrar('paso-rol'); }
-  else { elegirRol('recepcion'); }
+  if (servicio !== 'emergencia') { elegirRol('recepcion'); return; }
+  // Solo ofrecer roles con gente activa; si la red falla o no hay nadie, los tres de siempre
+  const filas = await consultar(`${SUPABASE_URL}/rest/v1/encuesta_personal?select=rol&servicio=eq.${servicio}&activo=eq.true`);
+  const roles = filas ? [...new Set(filas.map(f => f.rol))] : [];
+  document.querySelectorAll('#paso-rol [data-rol]').forEach(b => {
+    b.style.display = (!roles.length || roles.includes(b.dataset.rol)) ? '' : 'none';
+  });
+  if (roles.length === 1) { elegirRol(roles[0]); return; }
+  mostrar('paso-rol');
 }
 
-async function cargarPersonal(rol) {
-  const url = `${SUPABASE_URL}/rest/v1/encuesta_personal?select=id,nombre,foto_url&servicio=eq.${estado.servicio}&rol=eq.${rol}&activo=eq.true&order=orden`;
+async function consultar(url) {
   for (let intento = 0; intento < 3; intento++) {
     try {
       const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
@@ -419,6 +425,10 @@ async function cargarPersonal(rol) {
     await new Promise(r => setTimeout(r, 800));
   }
   return null; // falló la red: distinto de lista vacía
+}
+
+async function cargarPersonal(rol) {
+  return consultar(`${SUPABASE_URL}/rest/v1/encuesta_personal?select=id,nombre,foto_url&servicio=eq.${estado.servicio}&rol=eq.${rol}&activo=eq.true&order=orden`);
 }
 
 async function elegirRol(rol) {
