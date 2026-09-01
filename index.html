@@ -379,14 +379,21 @@ function elegirServicio(servicio) {
   else { elegirRol('recepcion'); }
 }
 
+async function cargarPersonal(rol) {
+  const url = `${SUPABASE_URL}/rest/v1/encuesta_personal?select=id,nombre,foto_url&servicio=eq.${estado.servicio}&rol=eq.${rol}&activo=eq.true&order=orden`;
+  for (let intento = 0; intento < 3; intento++) {
+    try {
+      const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
+      if (res.ok) return await res.json();
+    } catch {}
+    await new Promise(r => setTimeout(r, 800));
+  }
+  return [];
+}
+
 async function elegirRol(rol) {
   estado.rol = rol;
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/encuesta_personal?select=id,nombre,foto_url&servicio=eq.${estado.servicio}&rol=eq.${rol}&activo=eq.true&order=orden`, {
-      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
-    });
-    personalCache = res.ok ? await res.json() : [];
-  } catch { personalCache = []; }
+  personalCache = await cargarPersonal(rol);
 
   if (!personalCache.length) { elegirPersona(null); return; }
 
