@@ -288,6 +288,9 @@
     <button class="btn-volver" onclick="volver()">← Volver</button>
     <h1>¿Quién te atendió?</h1>
     <p class="sub">Toca la foto de la persona</p>
+    <div class="error-msg" id="error-personal">No se pudo cargar la lista.
+      <button class="btn-secundario" style="margin-top:6px" onclick="elegirRol(estado.rol)">Reintentar</button>
+    </div>
     <div class="grid-personal" id="grid-personal"></div>
     <button class="btn-secundario" onclick="elegirPersona(null)">No recuerdo / prefiero no decir</button>
   </section>
@@ -356,7 +359,7 @@
   </section>
 
 </main>
-<footer>Clínica Versalles · Encuesta anónima de satisfacción</footer>
+<footer>Clínica Versalles · Encuesta anónima de satisfacción · v5</footer>
 
 <script>
 const SUPABASE_URL = 'https://cvijxlgdshfwqszbqgkr.supabase.co';
@@ -415,12 +418,22 @@ async function cargarPersonal(rol) {
     } catch {}
     await new Promise(r => setTimeout(r, 800));
   }
-  return [];
+  return null; // falló la red: distinto de lista vacía
 }
 
 async function elegirRol(rol) {
   estado.rol = rol;
-  personalCache = await cargarPersonal(rol);
+  const lista = await cargarPersonal(rol);
+
+  if (lista === null) {
+    // Red falló: mostrar error visible con Reintentar, no saltar en silencio
+    document.getElementById('grid-personal').innerHTML = '';
+    document.getElementById('error-personal').style.display = 'block';
+    mostrar('paso-persona');
+    return;
+  }
+  document.getElementById('error-personal').style.display = 'none';
+  personalCache = lista;
 
   if (!personalCache.length) { elegirPersona(null); return; }
 
@@ -434,6 +447,8 @@ async function elegirRol(rol) {
     card.innerHTML = p.foto_url
       ? `<img src="${p.foto_url}" alt=""><div class="nombre"></div>`
       : `<div class="avatar">${iniciales}</div><div class="nombre"></div>`;
+    const img = card.querySelector('img');
+    if (img) img.onerror = () => { img.outerHTML = `<div class="avatar">${iniciales}</div>`; };
     card.querySelector('.nombre').textContent = p.nombre;
     grid.appendChild(card);
   }
