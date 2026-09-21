@@ -108,6 +108,29 @@
     background: #eef2f7; color: var(--texto); text-decoration: none; font-size: .85rem;
   }
   .vacio { padding: 24px; text-align: center; color: var(--gris); }
+
+  /* Pestañas y gestión de personal */
+  .tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #dde4ec; }
+  .tab { padding: 10px 18px; border: none; background: none; font-size: 1rem; cursor: pointer; color: var(--gris); border-bottom: 3px solid transparent; margin-bottom: -2px; }
+  .tab.sel { color: var(--azul); border-bottom-color: var(--azul); font-weight: 700; }
+  #vista-personal { display: none; }
+  .form-personal { background: #fff; border: 1px solid #dde4ec; border-radius: 14px; padding: 16px; display: grid; gap: 12px; }
+  .form-personal label { font-size: .85rem; color: var(--gris); display: grid; gap: 4px; }
+  .form-personal input[type=text], .form-personal select { padding: 10px; font-size: 1rem; border: 2px solid #dde4ec; border-radius: 10px; }
+  .form-personal .checks { display: flex; gap: 16px; flex-wrap: wrap; color: var(--texto); font-size: .95rem; }
+  .form-personal .checks label { display: flex; align-items: center; gap: 6px; color: var(--texto); font-size: .95rem; }
+  .btn { padding: 10px 16px; border: none; border-radius: 10px; background: var(--azul); color: #fff; font-weight: 700; cursor: pointer; font-size: .9rem; }
+  .btn.sec { background: #eef2f7; color: var(--texto); }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .persona { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #eef2f7; flex-wrap: wrap; }
+  .persona:last-child { border-bottom: none; }
+  .persona.oculta { opacity: .5; }
+  .persona .foto { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; object-position: center top; background: #dbeafe; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--azul-oscuro); flex-shrink: 0; }
+  .persona .datos { flex: 1; min-width: 150px; }
+  .persona .cargo { font-size: .82rem; color: var(--gris); }
+  .chip { font-size: .75rem; padding: 2px 10px; border-radius: 999px; border: 1px solid #dde4ec; background: #fff; cursor: pointer; margin: 4px 4px 0 0; }
+  .chip.on { background: #d1fae5; border-color: var(--verde); }
+  .chip.off { text-decoration: line-through; color: var(--gris); }
 </style>
 </head>
 <body>
@@ -125,6 +148,43 @@
   </div>
 
   <div id="panel">
+    <div class="tabs">
+      <button class="tab sel" data-v="resultados">Resultados</button>
+      <button class="tab" data-v="personal">Personal</button>
+    </div>
+
+    <div id="vista-personal">
+      <h2 style="margin-top:0">Agregar persona</h2>
+      <div class="form-personal">
+        <label>Nombre (como aparecerá en la encuesta)
+          <input type="text" id="p-nombre" placeholder="Ej. Dra. Ana Pérez" maxlength="60">
+        </label>
+        <label>Cargo
+          <select id="p-rol">
+            <option value="recepcion">Admisión / Recepción</option>
+            <option value="enfermeria">Enfermería</option>
+            <option value="medico">Médico</option>
+          </select>
+        </label>
+        <div>
+          <div style="font-size:.85rem;color:var(--gris);margin-bottom:6px">Aparece en</div>
+          <div class="checks">
+            <label><input type="checkbox" id="p-recepcion" checked> Recepción</label>
+            <label><input type="checkbox" id="p-emergencia" checked> Emergencia</label>
+          </div>
+        </div>
+        <label>Foto (opcional — se recorta cuadrada, centrada arriba)
+          <input type="file" id="p-foto" accept="image/*">
+        </label>
+        <div><button class="btn" id="p-guardar" onclick="crearPersona()">Agregar</button></div>
+      </div>
+
+      <h2>Personal registrado</h2>
+      <div class="tabla" id="lista-personal"></div>
+      <input type="file" id="cambiar-foto" accept="image/*" style="display:none">
+    </div>
+
+    <div id="vista-resultados">
     <div class="filtros">
       <button class="filtro sel" data-f="todos">Todos</button>
       <button class="filtro" data-f="recepcion">Recepción</button>
@@ -145,6 +205,7 @@
 
     <h2>Comentarios recientes</h2>
     <div class="tabla" id="comentarios"></div>
+    </div>
   </div>
 
 </main>
@@ -162,29 +223,164 @@ const MOTIVOS_NOMBRE = {
 };
 
 let todas = [];
+let personal = [];
 let filtro = 'todos';
+let clave = '';
+
+async function rpc(fn, params) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ p_clave: clave, ...params }),
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'error');
+  return res.status === 204 ? null : res.json();
+}
+
+async function cargar() {
+  const data = await rpc('encuesta_admin', {});
+  todas = data.respuestas || [];
+  personal = data.personal || [];
+  render();
+  renderPersonal();
+}
 
 async function entrar() {
-  const clave = document.getElementById('clave').value;
+  clave = document.getElementById('clave').value;
   document.getElementById('login-error').style.display = 'none';
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/encuesta_admin`, {
-      method: 'POST',
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ p_clave: clave }),
-    });
-    if (!res.ok) throw new Error('clave');
-    const data = await res.json();
-    todas = data.respuestas || [];
+    await cargar();
     document.getElementById('login').style.display = 'none';
     document.getElementById('panel').style.display = 'block';
-    render();
   } catch {
     document.getElementById('login-error').style.display = 'block';
+  }
+}
+
+document.querySelector('.tabs').addEventListener('click', e => {
+  const t = e.target.closest('.tab');
+  if (!t) return;
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('sel', x === t));
+  document.getElementById('vista-resultados').style.display = t.dataset.v === 'resultados' ? '' : 'none';
+  document.getElementById('vista-personal').style.display = t.dataset.v === 'personal' ? 'block' : 'none';
+});
+
+// ---- Gestión de personal ----
+const SERVICIO_NOMBRE = { recepcion: 'Recepción', emergencia: 'Emergencia' };
+
+// Recepción solo muestra Admisión en la encuesta: desmarca y bloquea para otros cargos
+document.getElementById('p-rol').addEventListener('change', e => {
+  const chk = document.getElementById('p-recepcion');
+  chk.disabled = e.target.value !== 'recepcion';
+  if (chk.disabled) chk.checked = false;
+});
+
+// Recorte cuadrado centrado arriba (donde suele estar el rostro), máx 500px JPEG 80% (~40KB)
+function recortarFoto(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const lado = Math.min(img.width, img.height);
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = Math.min(500, lado);
+      canvas.getContext('2d').drawImage(img, (img.width - lado) / 2, 0, lado, lado, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(img.src);
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('foto')), 'image/jpeg', 0.8);
+    };
+    img.onerror = () => reject(new Error('No se pudo leer la imagen'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+// Usa la carpeta adjuntos/ porque es la única con permiso de subida pública
+async function subirFoto(file) {
+  const blob = await recortarFoto(file);
+  const nombre = `adjuntos/personal/${crypto.randomUUID()}.jpg`;
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/encuesta-fotos/${nombre}`, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'image/jpeg' },
+    body: blob,
+  });
+  if (!res.ok) throw new Error('No se pudo subir la foto');
+  return `${SUPABASE_URL}/storage/v1/object/public/encuesta-fotos/${nombre}`;
+}
+
+async function crearPersona() {
+  const nombre = document.getElementById('p-nombre').value.trim();
+  const rol = document.getElementById('p-rol').value;
+  const servicios = ['recepcion', 'emergencia'].filter(s => document.getElementById('p-' + s).checked);
+  const archivo = document.getElementById('p-foto').files[0];
+  if (!nombre) return alert('Escribe el nombre.');
+  if (!servicios.length) return alert('Marca al menos una sección.');
+  const btn = document.getElementById('p-guardar');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  try {
+    const foto = archivo ? await subirFoto(archivo) : null;
+    await rpc('encuesta_personal_crear', { p_nombre: nombre, p_rol: rol, p_servicios: servicios, p_foto_url: foto });
+    document.getElementById('p-nombre').value = '';
+    document.getElementById('p-foto').value = '';
+    await cargar();
+  } catch (e) {
+    alert('Error: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Agregar';
+  }
+}
+
+async function actualizar(ids, activo, foto) {
+  try {
+    await rpc('encuesta_personal_actualizar', { p_ids: ids, p_activo: activo, p_foto_url: foto });
+    await cargar();
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+let idsFoto = [];
+function pedirFoto(ids) { idsFoto = ids; document.getElementById('cambiar-foto').click(); }
+document.getElementById('cambiar-foto').addEventListener('change', async e => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  try { await actualizar(idsFoto, null, await subirFoto(f)); }
+  catch (err) { alert('Error: ' + err.message); }
+});
+
+// Una ficha por persona (nombre + cargo); cada sección es una fila en la base
+function renderPersonal() {
+  const grupos = {};
+  for (const p of personal) (grupos[p.nombre + '|' + p.rol] = grupos[p.nombre + '|' + p.rol] || []).push(p);
+  const lista = Object.values(grupos);
+  const cont = document.getElementById('lista-personal');
+  if (!lista.length) { cont.innerHTML = '<div class="vacio">Sin personal registrado</div>'; return; }
+  cont.innerHTML = '';
+  for (const filas of lista) {
+    const p = filas[0];
+    const ids = filas.map(f => f.id);
+    const algunaActiva = filas.some(f => f.activo);
+    const iniciales = p.nombre.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    const div = document.createElement('div');
+    div.className = 'persona' + (algunaActiva ? '' : ' oculta');
+    div.innerHTML = `
+      ${p.foto_url ? `<img class="foto" src="${esc(p.foto_url)}" alt="">` : `<div class="foto">${esc(iniciales)}</div>`}
+      <div class="datos">
+        <div style="font-weight:600">${esc(p.nombre)}</div>
+        <div class="cargo">${ROL_NOMBRE[p.rol] || esc(p.rol)}${algunaActiva ? '' : ' · oculta en la encuesta'}</div>
+        <div>${filas.map(f => `<button class="chip ${f.activo ? 'on' : 'off'}" data-id="${f.id}" data-activo="${f.activo}" title="Tocar para ${f.activo ? 'ocultar' : 'mostrar'} en esta sección">${SERVICIO_NOMBRE[f.servicio] || f.servicio}</button>`).join('')}</div>
+      </div>
+      <button class="btn sec" data-accion="foto">Cambiar foto</button>
+      <button class="btn ${algunaActiva ? 'sec' : ''}" data-accion="activo">${algunaActiva ? 'Ocultar' : 'Mostrar'}</button>`;
+    div.querySelectorAll('.chip').forEach(c => c.onclick = () => actualizar([c.dataset.id], c.dataset.activo !== 'true', null));
+    div.querySelector('[data-accion=foto]').onclick = () => pedirFoto(ids);
+    div.querySelector('[data-accion=activo]').onclick = () => {
+      if (algunaActiva && !confirm(`¿Ocultar a ${p.nombre} de la encuesta? Sus calificaciones pasadas se conservan.`)) return;
+      actualizar(ids, !algunaActiva, null);
+    };
+    cont.appendChild(div);
   }
 }
 
