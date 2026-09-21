@@ -189,6 +189,7 @@
       <button class="filtro sel" data-f="todos">Todos</button>
       <button class="filtro" data-f="recepcion">Recepción</button>
       <button class="filtro" data-f="emergencia">Emergencia</button>
+      <button class="filtro" data-f="enfermeria">Enfermería</button>
       <button class="filtro" data-f="7d">Últimos 7 días</button>
     </div>
 
@@ -220,6 +221,9 @@ const MOTIVOS_NOMBRE = {
   informacion: 'No me explicaron bien',
   seguro_pago: 'Problemas con seguro / pago',
   otro: 'Otro',
+  brusco: 'Enfermería: brusco/a en procedimiento',
+  no_acudio: 'Enfermería: no vino cuando la llamaron',
+  higiene: 'Enfermería: falta de higiene',
 };
 
 let todas = [];
@@ -397,6 +401,7 @@ function filtradas() {
   const hace7d = Date.now() - 7 * 24 * 3600 * 1000;
   return todas.filter(r => {
     if (filtro === 'recepcion' || filtro === 'emergencia') return r.servicio === filtro;
+    if (filtro === 'enfermeria') return r.rol === 'enfermeria';
     if (filtro === '7d') return new Date(r.creado_en).getTime() >= hace7d;
     return true;
   });
@@ -421,6 +426,8 @@ function render() {
     ['aspecto_trato', 'Trato y amabilidad'],
     ['aspecto_rapidez', 'Rapidez de la atención'],
     ['aspecto_informacion', 'Claridad de la información'],
+    ['aspecto_cuidado', 'Enfermería: cuidado en procedimientos'],
+    ['aspecto_higiene', 'Enfermería: higiene y limpieza'],
   ];
   document.getElementById('aspectos').innerHTML = ASPECTOS.map(([campo, nombre]) => {
     const con = rs.filter(r => r[campo]);

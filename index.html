@@ -311,11 +311,19 @@
       <div class="aspecto-caritas"></div>
     </div>
     <div class="aspecto" data-aspecto="rapidez">
-      <div class="aspecto-nombre">La rapidez de la atención</div>
+      <div class="aspecto-nombre" data-texto-enfermeria="Te atendió rápido cuando la necesitaste">La rapidez de la atención</div>
       <div class="aspecto-caritas"></div>
     </div>
     <div class="aspecto" data-aspecto="informacion">
-      <div class="aspecto-nombre">La claridad de la información</div>
+      <div class="aspecto-nombre" data-texto-enfermeria="Te explicó qué te aplicaba y cómo cuidarte">La claridad de la información</div>
+      <div class="aspecto-caritas"></div>
+    </div>
+    <div class="aspecto" data-aspecto="cuidado" data-solo="enfermeria">
+      <div class="aspecto-nombre">El cuidado al aplicarte medicamentos o inyecciones</div>
+      <div class="aspecto-caritas"></div>
+    </div>
+    <div class="aspecto" data-aspecto="higiene" data-solo="enfermeria">
+      <div class="aspecto-nombre">La higiene y limpieza (manos, guantes, material)</div>
       <div class="aspecto-caritas"></div>
     </div>
     <button class="btn-principal" onclick="irADetalle()">Continuar</button>
@@ -330,7 +338,10 @@
       <button class="chip" data-motivo="espera">Me hicieron esperar mucho</button>
       <button class="chip" data-motivo="trato">Trato descortés</button>
       <button class="chip" data-motivo="informacion">No me explicaron bien</button>
-      <button class="chip" data-motivo="seguro_pago">Problemas con seguro / pago</button>
+      <button class="chip" data-motivo="seguro_pago" data-no="enfermeria">Problemas con seguro / pago</button>
+      <button class="chip" data-motivo="brusco" data-solo="enfermeria">Fue brusco/a en un procedimiento</button>
+      <button class="chip" data-motivo="no_acudio" data-solo="enfermeria">No vino cuando la llamé</button>
+      <button class="chip" data-motivo="higiene" data-solo="enfermeria">Falta de higiene</button>
       <button class="chip" data-motivo="otro">Otro</button>
     </div>
     <textarea id="comentario" maxlength="1000" placeholder="Cuéntanos más (opcional)"></textarea>
@@ -359,7 +370,7 @@
   </section>
 
 </main>
-<footer>Clínica Versalles · Encuesta anónima de satisfacción · v6</footer>
+<footer>Clínica Versalles · Encuesta anónima de satisfacción · v7</footer>
 
 <script>
 const SUPABASE_URL = 'https://cvijxlgdshfwqszbqgkr.supabase.co';
@@ -375,7 +386,7 @@ const CARITAS = [
 
 const estado = {
   servicio: null, rol: null, personal: null, calificacion: null, motivos: [],
-  aspectos: { trato: null, rapidez: null, informacion: null }, recomienda: null,
+  aspectos: { trato: null, rapidez: null, informacion: null, cuidado: null, higiene: null }, recomienda: null,
 };
 let personalCache = [];
 
@@ -431,8 +442,22 @@ async function cargarPersonal(rol) {
   return consultar(`${SUPABASE_URL}/rest/v1/encuesta_personal?select=id,nombre,foto_url&servicio=eq.${estado.servicio}&rol=eq.${rol}&activo=eq.true&order=orden`);
 }
 
+// Preguntas y motivos propios de cada cargo (hoy solo Enfermería tiene los suyos)
+function prepararPreguntas(rol) {
+  document.querySelectorAll('[data-solo]').forEach(el => { el.style.display = el.dataset.solo === rol ? '' : 'none'; });
+  document.querySelectorAll('[data-no]').forEach(el => { el.style.display = el.dataset.no === rol ? 'none' : ''; });
+  document.querySelectorAll('[data-texto-enfermeria]').forEach(el => {
+    el.dataset.textoBase ??= el.textContent;
+    el.textContent = rol === 'enfermeria' ? el.dataset.textoEnfermeria : el.dataset.textoBase;
+  });
+  // Si volvió y cambió de cargo, soltar motivos que ya no se ven
+  document.querySelectorAll('#chips .chip.sel').forEach(c => { if (c.style.display === 'none') c.classList.remove('sel'); });
+  estado.motivos = [...document.querySelectorAll('#chips .chip.sel')].map(c => c.dataset.motivo);
+}
+
 async function elegirRol(rol) {
   estado.rol = rol;
+  prepararPreguntas(rol);
   const lista = await cargarPersonal(rol);
 
   if (lista === null) {
@@ -610,6 +635,8 @@ async function enviar() {
         aspecto_trato: estado.aspectos.trato,
         aspecto_rapidez: estado.aspectos.rapidez,
         aspecto_informacion: estado.aspectos.informacion,
+        aspecto_cuidado: estado.rol === 'enfermeria' ? estado.aspectos.cuidado : null,
+        aspecto_higiene: estado.rol === 'enfermeria' ? estado.aspectos.higiene : null,
         recomienda: estado.recomienda,
       }),
     });
