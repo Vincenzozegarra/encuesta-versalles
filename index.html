@@ -370,7 +370,7 @@
   </section>
 
 </main>
-<footer>Clínica Versalles · Encuesta anónima de satisfacción · v7</footer>
+<footer>Clínica Versalles · Encuesta anónima de satisfacción · v8</footer>
 
 <script>
 const SUPABASE_URL = 'https://cvijxlgdshfwqszbqgkr.supabase.co';
@@ -414,16 +414,10 @@ function yaRespondio() {
   } catch { return false; }
 }
 
-async function elegirServicio(servicio) {
+// Emergencia siempre ofrece los 3 cargos; si un cargo no tiene fotos, se califica en general
+function elegirServicio(servicio) {
   estado.servicio = servicio;
   if (servicio !== 'emergencia') { elegirRol('recepcion'); return; }
-  // Solo ofrecer roles con gente activa; si la red falla o no hay nadie, los tres de siempre
-  const filas = await consultar(`${SUPABASE_URL}/rest/v1/encuesta_personal?select=rol&servicio=eq.${servicio}&activo=eq.true`);
-  const roles = filas ? [...new Set(filas.map(f => f.rol))] : [];
-  document.querySelectorAll('#paso-rol [data-rol]').forEach(b => {
-    b.style.display = (!roles.length || roles.includes(b.dataset.rol)) ? '' : 'none';
-  });
-  if (roles.length === 1) { elegirRol(roles[0]); return; }
   mostrar('paso-rol');
 }
 
