@@ -76,6 +76,7 @@
     text-align: center;
     cursor: pointer;
   }
+  .grupo-titulo { grid-column: 1 / -1; font-weight: 700; color: var(--azul-oscuro); margin-top: 10px; font-size: 1rem; }
   .card-persona:active { border-color: var(--azul); background: #eff6ff; }
   .btn-volver {
     background: none;
@@ -344,7 +345,7 @@
   </section>
 
 </main>
-<footer>Clínica Versalles · Encuesta anónima de satisfacción · v9</footer>
+<footer>Clínica Versalles · Encuesta anónima de satisfacción · v10</footer>
 
 <script>
 const SUPABASE_URL = 'https://cvijxlgdshfwqszbqgkr.supabase.co';
@@ -407,7 +408,7 @@ async function consultar(url) {
 }
 
 async function cargarPersonal(rol) {
-  return consultar(`${SUPABASE_URL}/rest/v1/encuesta_personal?select=id,nombre,foto_url&servicio=eq.${estado.servicio}&rol=eq.${rol}&activo=eq.true&order=orden`);
+  return consultar(`${SUPABASE_URL}/rest/v1/encuesta_personal?select=id,nombre,foto_url,area&servicio=eq.${estado.servicio}&rol=eq.${rol}&activo=eq.true&order=area.nullslast,orden`);
 }
 
 // Preguntas y motivos de cada cargo: se editan desde el panel (tabla encuesta_preguntas)
@@ -465,7 +466,17 @@ async function elegirRol(rol) {
 
   const grid = document.getElementById('grid-personal');
   grid.innerHTML = '';
+  // Título por área/especialidad (viene ordenado por área) solo si hay más de una
+  const variasAreas = new Set(personalCache.map(p => p.area || '')).size > 1;
+  let areaActual;
   for (const p of personalCache) {
+    if (variasAreas && (p.area || '') !== areaActual) {
+      areaActual = p.area || '';
+      const t = document.createElement('div');
+      t.className = 'grupo-titulo';
+      t.textContent = areaActual || 'Otros';
+      grid.appendChild(t);
+    }
     const card = document.createElement('button');
     card.className = 'card-persona';
     card.onclick = () => elegirPersona(p);

@@ -178,6 +178,10 @@
             <option value="obstetra">Obstetricia</option>
           </select>
         </label>
+        <label>Área o especialidad (opcional — agrupa las fotos en la encuesta)
+          <input type="text" id="p-area" list="areas" maxlength="40" placeholder="Ej. Pediatría, Seguros, Admisión natal">
+          <datalist id="areas"></datalist>
+        </label>
         <div>
           <div style="font-size:.85rem;color:var(--gris);margin-bottom:6px">Aparece en</div>
           <div class="checks">
@@ -409,7 +413,11 @@ function recortarFoto(file) {
       const lado = Math.min(img.width, img.height);
       const canvas = document.createElement('canvas');
       canvas.width = canvas.height = Math.min(500, lado);
-      canvas.getContext('2d').drawImage(img, (img.width - lado) / 2, 0, lado, lado, 0, 0, canvas.width, canvas.height);
+      const ctx = canvas.getContext('2d');
+      // PNG con fondo transparente: sin esto el JPEG lo pinta negro
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, (img.width - lado) / 2, 0, lado, lado, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(img.src);
       canvas.toBlob(b => b ? resolve(b) : reject(new Error('foto')), 'image/jpeg', 0.8);
     };
@@ -442,8 +450,10 @@ async function crearPersona() {
   btn.disabled = true; btn.textContent = 'Guardando…';
   try {
     const foto = archivo ? await subirFoto(archivo) : null;
-    await rpc('encuesta_personal_crear', { p_nombre: nombre, p_rol: rol, p_servicios: servicios, p_foto_url: foto });
+    const area = document.getElementById('p-area').value.trim() || null;
+    await rpc('encuesta_personal_crear', { p_nombre: nombre, p_rol: rol, p_servicios: servicios, p_foto_url: foto, p_area: area });
     document.getElementById('p-nombre').value = '';
+    document.getElementById('p-area').value = '';
     document.getElementById('p-foto').value = '';
     await cargar();
   } catch (e) {
@@ -453,9 +463,9 @@ async function crearPersona() {
   }
 }
 
-async function actualizar(ids, activo, foto) {
+async function actualizar(ids, activo, foto, area = null) {
   try {
-    await rpc('encuesta_personal_actualizar', { p_ids: ids, p_activo: activo, p_foto_url: foto });
+    await rpc('encuesta_personal_actualizar', { p_ids: ids, p_activo: activo, p_foto_url: foto, p_area: area });
     await cargar();
   } catch (e) {
     alert('Error: ' + e.message);
@@ -474,6 +484,10 @@ document.getElementById('cambiar-foto').addEventListener('change', async e => {
 
 // Una ficha por persona (nombre + cargo); cada sección es una fila en la base
 function renderPersonal() {
+  // Sugerencias de área: las ya usadas + especialidades comunes
+  const areas = new Set(['Emergencia', 'Medicina general', 'Pediatría', 'Ginecología', 'Admisión', 'Seguros', 'Admisión natal', 'Presupuestos']);
+  personal.forEach(p => p.area && areas.add(p.area));
+  document.getElementById('areas').innerHTML = [...areas].map(a => `<option value="${esc(a)}">`).join('');
   const grupos = {};
   for (const p of personal) (grupos[p.nombre + '|' + p.rol] = grupos[p.nombre + '|' + p.rol] || []).push(p);
   const lista = Object.values(grupos);
@@ -491,13 +505,18 @@ function renderPersonal() {
       ${p.foto_url ? `<img class="foto" src="${esc(p.foto_url)}" alt="">` : `<div class="foto">${esc(iniciales)}</div>`}
       <div class="datos">
         <div style="font-weight:600">${esc(p.nombre)}</div>
-        <div class="cargo">${ROL_NOMBRE[p.rol] || esc(p.rol)}${algunaActiva ? '' : ' · oculta en la encuesta'}</div>
+        <div class="cargo">${ROL_NOMBRE[p.rol] || esc(p.rol)}${p.area ? ' · ' + esc(p.area) : ''}${algunaActiva ? '' : ' · oculta en la encuesta'}</div>
         <div>${filas.map(f => `<button class="chip ${f.activo ? 'on' : 'off'}" data-id="${f.id}" data-activo="${f.activo}" title="Tocar para ${f.activo ? 'ocultar' : 'mostrar'} en esta sección">${SERVICIO_NOMBRE[f.servicio] || f.servicio}</button>`).join('')}</div>
       </div>
+      <button class="btn sec" data-accion="area">Cambiar área</button>
       <button class="btn sec" data-accion="foto">Cambiar foto</button>
       <button class="btn ${algunaActiva ? 'sec' : ''}" data-accion="activo">${algunaActiva ? 'Ocultar' : 'Mostrar'}</button>`;
     div.querySelectorAll('.chip').forEach(c => c.onclick = () => actualizar([c.dataset.id], c.dataset.activo !== 'true', null));
     div.querySelector('[data-accion=foto]').onclick = () => pedirFoto(ids);
+    div.querySelector('[data-accion=area]').onclick = () => {
+      const nueva = prompt(`Área o especialidad de ${p.nombre} (vacío para quitar):`, p.area || '');
+      if (nueva !== null) actualizar(ids, null, null, nueva.trim());
+    };
     div.querySelector('[data-accion=activo]').onclick = () => {
       if (algunaActiva && !confirm(`¿Ocultar a ${p.nombre} de la encuesta? Sus calificaciones pasadas se conservan.`)) return;
       actualizar(ids, !algunaActiva, null);
