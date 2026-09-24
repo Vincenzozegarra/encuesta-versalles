@@ -69,6 +69,11 @@
     font-size: .9rem;
   }
   .filtro.sel { border-color: var(--azul); background: #dbeafe; font-weight: 600; }
+  .filtros-titulo { font-size: .78rem; color: var(--gris); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+  .rango { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; font-size: .85rem; color: var(--gris); }
+  .rango input[type=date] { padding: 7px 10px; border: 2px solid #dde4ec; border-radius: 999px; font-size: .85rem; font-family: inherit; }
+  .barra-acciones { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+  .periodo-texto { color: var(--gris); font-size: .85rem; }
 
   .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px; }
   .kpi { background: #fff; border-radius: 14px; padding: 16px; border: 1px solid #dde4ec; }
@@ -185,12 +190,33 @@
     </div>
 
     <div id="vista-resultados">
-    <div class="filtros">
+    <div class="filtros-titulo">Área</div>
+    <div class="filtros" id="filtros-area">
       <button class="filtro sel" data-f="todos">Todos</button>
       <button class="filtro" data-f="recepcion">Recepción</button>
       <button class="filtro" data-f="emergencia">Emergencia</button>
       <button class="filtro" data-f="enfermeria">Enfermería</button>
-      <button class="filtro" data-f="7d">Últimos 7 días</button>
+    </div>
+
+    <div class="filtros-titulo">Período</div>
+    <div class="filtros" id="filtros-periodo">
+      <button class="filtro" data-p="7">Últimos 7 días</button>
+      <button class="filtro" data-p="14">2 semanas</button>
+      <button class="filtro" data-p="30">Último mes</button>
+      <button class="filtro" data-p="90">3 meses</button>
+      <button class="filtro" data-p="mes">Este mes</button>
+      <button class="filtro" data-p="mes-pasado">Mes pasado</button>
+      <button class="filtro sel" data-p="todo">Todo</button>
+    </div>
+    <div class="rango">
+      <span>O entre fechas:</span>
+      <input type="date" id="desde"> <span>a</span> <input type="date" id="hasta">
+      <button class="filtro" onclick="limpiarRango()">Limpiar</button>
+    </div>
+
+    <div class="barra-acciones">
+      <div class="periodo-texto" id="periodo-texto"></div>
+      <button class="btn" onclick="descargarExcel()">⬇ Descargar Excel</button>
     </div>
 
     <div class="kpis" id="kpis"></div>
@@ -229,6 +255,7 @@ const MOTIVOS_NOMBRE = {
 let todas = [];
 let personal = [];
 let filtro = 'todos';
+let periodo = 'todo';
 let clave = '';
 
 async function rpc(fn, params) {
@@ -388,23 +415,104 @@ function renderPersonal() {
   }
 }
 
-document.querySelector('.filtros').addEventListener('click', e => {
+document.getElementById('filtros-area').addEventListener('click', e => {
   const b = e.target.closest('.filtro');
   if (!b) return;
-  document.querySelectorAll('.filtro').forEach(f => f.classList.remove('sel'));
+  document.querySelectorAll('#filtros-area .filtro').forEach(f => f.classList.remove('sel'));
   b.classList.add('sel');
   filtro = b.dataset.f;
   render();
 });
 
+document.getElementById('filtros-periodo').addEventListener('click', e => {
+  const b = e.target.closest('.filtro');
+  if (!b) return;
+  document.querySelectorAll('#filtros-periodo .filtro').forEach(f => f.classList.remove('sel'));
+  b.classList.add('sel');
+  periodo = b.dataset.p;
+  document.getElementById('desde').value = '';
+  document.getElementById('hasta').value = '';
+  render();
+});
+
+// Fechas a mano: mandan sobre los botones de período
+document.getElementById('desde').addEventListener('change', render);
+document.getElementById('hasta').addEventListener('change', render);
+function limpiarRango() {
+  document.getElementById('desde').value = '';
+  document.getElementById('hasta').value = '';
+  render();
+}
+
+// Devuelve [desde, hasta) en milisegundos; null = sin límite
+function rangoActivo() {
+  const d = document.getElementById('desde').value;
+  const h = document.getElementById('hasta').value;
+  if (d || h) return {
+    desde: d ? new Date(d + 'T00:00:00').getTime() : null,
+    hasta: h ? new Date(h + 'T23:59:59.999').getTime() : null,
+    texto: `del ${d ? fechaCorta(d) : 'inicio'} al ${h ? fechaCorta(h) : 'hoy'}`,
+  };
+  const hoy = new Date();
+  if (periodo === 'mes') {
+    const ini = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    return { desde: ini.getTime(), hasta: null, texto: 'de ' + nombreMes(ini) };
+  }
+  if (periodo === 'mes-pasado') {
+    const ini = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+    const fin = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    return { desde: ini.getTime(), hasta: fin.getTime() - 1, texto: 'de ' + nombreMes(ini) };
+  }
+  const dias = Number(periodo);
+  if (dias) return { desde: Date.now() - dias * 24 * 3600 * 1000, hasta: null, texto: `de los últimos ${dias} días` };
+  return { desde: null, hasta: null, texto: 'de todo el historial' };
+}
+
+const fechaCorta = iso => new Date(iso + 'T12:00:00').toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const nombreMes = d => d.toLocaleDateString('es-PE', { month: 'long', year: 'numeric' });
+
 function filtradas() {
-  const hace7d = Date.now() - 7 * 24 * 3600 * 1000;
+  const r0 = rangoActivo();
   return todas.filter(r => {
-    if (filtro === 'recepcion' || filtro === 'emergencia') return r.servicio === filtro;
-    if (filtro === 'enfermeria') return r.rol === 'enfermeria';
-    if (filtro === '7d') return new Date(r.creado_en).getTime() >= hace7d;
+    if (filtro === 'recepcion' || filtro === 'emergencia') { if (r.servicio !== filtro) return false; }
+    else if (filtro === 'enfermeria' && r.rol !== 'enfermeria') return false;
+    const t = new Date(r.creado_en).getTime();
+    if (r0.desde !== null && t < r0.desde) return false;
+    if (r0.hasta !== null && t > r0.hasta) return false;
     return true;
   });
+}
+
+const AREA_TEXTO = { todos: 'Todas las áreas', recepcion: 'Recepción', emergencia: 'Emergencia', enfermeria: 'Enfermería' };
+
+// Excel abre CSV con punto y coma; el BOM mantiene las tildes
+function descargarExcel() {
+  const rs = filtradas();
+  if (!rs.length) return alert('No hay respuestas en ese período.');
+  const cols = [
+    ['Fecha', r => new Date(r.creado_en).toLocaleString('es-PE')],
+    ['Área', r => r.servicio === 'recepcion' ? 'Recepción' : 'Emergencia'],
+    ['Cargo', r => ROL_NOMBRE[r.rol] || r.rol || ''],
+    ['Persona', r => r.personal_nombre || 'Sin identificar'],
+    ['Calificación', r => r.calificacion],
+    ['Trato', r => r.aspecto_trato || ''],
+    ['Rapidez', r => r.aspecto_rapidez || ''],
+    ['Información', r => r.aspecto_informacion || ''],
+    ['Cuidado (enfermería)', r => r.aspecto_cuidado || ''],
+    ['Higiene (enfermería)', r => r.aspecto_higiene || ''],
+    ['Recomendaría', r => r.recomienda === true ? 'Sí' : r.recomienda === false ? 'No' : ''],
+    ['Motivos', r => (r.motivos || []).map(m => MOTIVOS_NOMBRE[m] || m).join(' | ')],
+    ['Comentario', r => r.comentario || ''],
+    ['Adjuntos', r => (r.adjuntos || []).join(' | ')],
+  ];
+  const celda = v => `"${String(v).replace(/"/g, '""')}"`;
+  const filas = [cols.map(c => celda(c[0])).join(';'), ...rs.map(r => cols.map(c => celda(c[1](r))).join(';'))];
+  const blob = new Blob(['\uFEFF' + filas.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `encuestas-versalles-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 const prom = arr => arr.length ? (arr.reduce((s, r) => s + r.calificacion, 0) / arr.length) : 0;
@@ -412,6 +520,8 @@ const esc = t => { const d = document.createElement('div'); d.textContent = t; r
 
 function render() {
   const rs = filtradas();
+  document.getElementById('periodo-texto').textContent =
+    `${AREA_TEXTO[filtro]} · ${rangoActivo().texto} · ${rs.length} respuesta${rs.length === 1 ? '' : 's'}`;
 
   const negativas = rs.filter(r => r.calificacion <= 2).length;
   document.getElementById('kpis').innerHTML = `
