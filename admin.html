@@ -118,7 +118,12 @@
   .tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #dde4ec; }
   .tab { padding: 10px 18px; border: none; background: none; font-size: 1rem; cursor: pointer; color: var(--gris); border-bottom: 3px solid transparent; margin-bottom: -2px; }
   .tab.sel { color: var(--azul); border-bottom-color: var(--azul); font-weight: 700; }
-  #vista-personal { display: none; }
+  #vista-personal, #vista-preguntas { display: none; }
+  .pregunta { display: flex; gap: 8px; align-items: center; padding: 10px 16px; border-bottom: 1px solid #eef2f7; }
+  .pregunta:last-child { border-bottom: none; }
+  .pregunta input { flex: 1; padding: 8px 10px; font-size: .95rem; border: 2px solid #dde4ec; border-radius: 8px; min-width: 0; }
+  .pregunta.oculta input { opacity: .5; text-decoration: line-through; }
+  .pregunta .guardado { color: var(--verde); font-size: .8rem; width: 60px; }
   .form-personal { background: #fff; border: 1px solid #dde4ec; border-radius: 14px; padding: 16px; display: grid; gap: 12px; }
   .form-personal label { font-size: .85rem; color: var(--gris); display: grid; gap: 4px; }
   .form-personal input[type=text], .form-personal select { padding: 10px; font-size: 1rem; border: 2px solid #dde4ec; border-radius: 10px; }
@@ -156,6 +161,7 @@
     <div class="tabs">
       <button class="tab sel" data-v="resultados">Resultados</button>
       <button class="tab" data-v="personal">Personal</button>
+      <button class="tab" data-v="preguntas">Preguntas</button>
     </div>
 
     <div id="vista-personal">
@@ -169,6 +175,7 @@
             <option value="recepcion">Admisión / Recepción</option>
             <option value="enfermeria">Enfermería</option>
             <option value="medico">Médico</option>
+            <option value="obstetra">Obstetricia</option>
           </select>
         </label>
         <div>
@@ -189,6 +196,25 @@
       <input type="file" id="cambiar-foto" accept="image/*" style="display:none">
     </div>
 
+    <div id="vista-preguntas">
+      <div class="filtros-titulo">Cargo</div>
+      <div class="filtros" id="filtros-cargo-preg">
+        <button class="filtro sel" data-r="recepcion">Admisión / Recepción</button>
+        <button class="filtro" data-r="enfermeria">Enfermería</button>
+        <button class="filtro" data-r="medico">Médico</button>
+        <button class="filtro" data-r="obstetra">Obstetricia</button>
+      </div>
+      <p style="color:var(--gris);font-size:.88rem">Los cambios se ven en la encuesta al instante. Ocultar una pregunta no borra las respuestas pasadas.</p>
+
+      <h2>Preguntas de calificación (caritas 1 a 5)</h2>
+      <div class="tabla" id="lista-aspectos"></div>
+      <div class="pregunta"><input type="text" id="nuevo-aspecto" maxlength="200" placeholder="Nueva pregunta, ej. La puntualidad de la cita"><button class="btn" onclick="crearPregunta('aspecto')">Agregar</button></div>
+
+      <h2>Motivos de queja (aparecen si la nota es 1 a 3)</h2>
+      <div class="tabla" id="lista-motivos"></div>
+      <div class="pregunta"><input type="text" id="nuevo-motivo" maxlength="200" placeholder="Nuevo motivo, ej. No me dieron receta"><button class="btn" onclick="crearPregunta('motivo')">Agregar</button></div>
+    </div>
+
     <div id="vista-resultados">
     <div class="filtros-titulo">Área</div>
     <div class="filtros" id="filtros-area">
@@ -196,6 +222,7 @@
       <button class="filtro" data-f="recepcion">Recepción</button>
       <button class="filtro" data-f="emergencia">Emergencia</button>
       <button class="filtro" data-f="enfermeria">Enfermería</button>
+      <button class="filtro" data-f="obstetra">Obstetricia</button>
     </div>
 
     <div class="filtros-titulo">Período</div>
@@ -240,20 +267,11 @@
 const SUPABASE_URL = 'https://cvijxlgdshfwqszbqgkr.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_SjOE5lvfh0fyyDRHQMc23w_ItvE2Yb4';
 
-const ROL_NOMBRE = { recepcion: 'Admisión', enfermeria: 'Enfermería', medico: 'Médico' };
-const MOTIVOS_NOMBRE = {
-  espera: 'Me hicieron esperar mucho',
-  trato: 'Trato descortés',
-  informacion: 'No me explicaron bien',
-  seguro_pago: 'Problemas con seguro / pago',
-  otro: 'Otro',
-  brusco: 'Enfermería: brusco/a en procedimiento',
-  no_acudio: 'Enfermería: no vino cuando la llamaron',
-  higiene: 'Enfermería: falta de higiene',
-};
+const ROL_NOMBRE = { recepcion: 'Admisión', enfermeria: 'Enfermería', medico: 'Médico', obstetra: 'Obstetricia' };
 
 let todas = [];
 let personal = [];
+let preguntas = [];
 let filtro = 'todos';
 let periodo = 'todo';
 let clave = '';
@@ -276,8 +294,10 @@ async function cargar() {
   const data = await rpc('encuesta_admin', {});
   todas = data.respuestas || [];
   personal = data.personal || [];
+  preguntas = data.preguntas || [];
   render();
   renderPersonal();
+  renderPreguntas();
 }
 
 async function entrar() {
@@ -296,9 +316,80 @@ document.querySelector('.tabs').addEventListener('click', e => {
   const t = e.target.closest('.tab');
   if (!t) return;
   document.querySelectorAll('.tab').forEach(x => x.classList.toggle('sel', x === t));
-  document.getElementById('vista-resultados').style.display = t.dataset.v === 'resultados' ? '' : 'none';
-  document.getElementById('vista-personal').style.display = t.dataset.v === 'personal' ? 'block' : 'none';
+  for (const v of ['resultados', 'personal', 'preguntas'])
+    document.getElementById('vista-' + v).style.display = t.dataset.v === v ? 'block' : 'none';
 });
+
+// ---- Preguntas editables por cargo ----
+let rolPreg = 'recepcion';
+document.getElementById('filtros-cargo-preg').addEventListener('click', e => {
+  const b = e.target.closest('.filtro');
+  if (!b) return;
+  document.querySelectorAll('#filtros-cargo-preg .filtro').forEach(f => f.classList.toggle('sel', f === b));
+  rolPreg = b.dataset.r;
+  renderPreguntas();
+});
+
+async function guardarPregunta(params) {
+  await rpc('encuesta_pregunta_guardar', { p_id: null, p_rol: rolPreg, p_tipo: null, p_texto: null, p_activo: null, ...params });
+}
+
+async function crearPregunta(tipo) {
+  const input = document.getElementById('nuevo-' + tipo);
+  const texto = input.value.trim();
+  if (!texto) return alert('Escribe el texto.');
+  try {
+    await guardarPregunta({ p_tipo: tipo, p_texto: texto });
+    input.value = '';
+    await cargar();
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+function renderPreguntas() {
+  for (const tipo of ['aspecto', 'motivo']) {
+    const cont = document.getElementById(tipo === 'aspecto' ? 'lista-aspectos' : 'lista-motivos');
+    const lista = preguntas.filter(q => q.rol === rolPreg && q.tipo === tipo);
+    cont.innerHTML = lista.length ? '' : '<div class="vacio">Sin preguntas</div>';
+    for (const q of lista) {
+      const div = document.createElement('div');
+      div.className = 'pregunta' + (q.activo ? '' : ' oculta');
+      div.innerHTML = `<input type="text" maxlength="200"><span class="guardado"></span>
+        <button class="btn ${q.activo ? 'sec' : ''}">${q.activo ? 'Ocultar' : 'Mostrar'}</button>`;
+      const input = div.querySelector('input');
+      input.value = q.texto;
+      // Guarda al salir del campo o con Enter
+      input.onchange = async () => {
+        const texto = input.value.trim();
+        if (!texto) { input.value = q.texto; return; }
+        try {
+          await guardarPregunta({ p_id: q.id, p_texto: texto });
+          q.texto = texto;
+          div.querySelector('.guardado').textContent = '✓ Guardado';
+        } catch (e) { alert('Error: ' + e.message); input.value = q.texto; }
+      };
+      input.onkeydown = e => { if (e.key === 'Enter') input.blur(); };
+      div.querySelector('button').onclick = async () => {
+        try { await guardarPregunta({ p_id: q.id, p_activo: !q.activo }); await cargar(); }
+        catch (e) { alert('Error: ' + e.message); }
+      };
+      cont.appendChild(div);
+    }
+  }
+}
+
+// Texto de una pregunta por su clave; prefiere el del cargo filtrado (el mismo aspecto puede decirse distinto por cargo)
+function textoPregunta(tipo, clave) {
+  const qs = preguntas.filter(q => q.tipo === tipo && q.clave === clave);
+  return (qs.find(q => q.rol === filtro) || qs.find(q => q.activo) || qs[0])?.texto || clave;
+}
+
+// Claves de aspecto a mostrar: las de las preguntas (en su orden) más cualquiera que venga en respuestas viejas
+function clavesAspecto(rs) {
+  const claves = [];
+  for (const q of preguntas) if (q.tipo === 'aspecto' && (!['enfermeria', 'obstetra'].includes(filtro) || q.rol === filtro) && !claves.includes(q.clave)) claves.push(q.clave);
+  for (const r of rs) for (const k of Object.keys(r.aspectos || {})) if (!claves.includes(k)) claves.push(k);
+  return claves;
+}
 
 // ---- Gestión de personal ----
 const SERVICIO_NOMBRE = { recepcion: 'Recepción', emergencia: 'Emergencia' };
@@ -475,7 +566,7 @@ function filtradas() {
   const r0 = rangoActivo();
   return todas.filter(r => {
     if (filtro === 'recepcion' || filtro === 'emergencia') { if (r.servicio !== filtro) return false; }
-    else if (filtro === 'enfermeria' && r.rol !== 'enfermeria') return false;
+    else if ((filtro === 'enfermeria' || filtro === 'obstetra') && r.rol !== filtro) return false;
     const t = new Date(r.creado_en).getTime();
     if (r0.desde !== null && t < r0.desde) return false;
     if (r0.hasta !== null && t > r0.hasta) return false;
@@ -483,7 +574,7 @@ function filtradas() {
   });
 }
 
-const AREA_TEXTO = { todos: 'Todas las áreas', recepcion: 'Recepción', emergencia: 'Emergencia', enfermeria: 'Enfermería' };
+const AREA_TEXTO = { todos: 'Todas las áreas', recepcion: 'Recepción', emergencia: 'Emergencia', enfermeria: 'Enfermería', obstetra: 'Obstetricia' };
 
 // Excel abre CSV con punto y coma; el BOM mantiene las tildes
 function descargarExcel() {
@@ -495,13 +586,9 @@ function descargarExcel() {
     ['Cargo', r => ROL_NOMBRE[r.rol] || r.rol || ''],
     ['Persona', r => r.personal_nombre || 'Sin identificar'],
     ['Calificación', r => r.calificacion],
-    ['Trato', r => r.aspecto_trato || ''],
-    ['Rapidez', r => r.aspecto_rapidez || ''],
-    ['Información', r => r.aspecto_informacion || ''],
-    ['Cuidado (enfermería)', r => r.aspecto_cuidado || ''],
-    ['Higiene (enfermería)', r => r.aspecto_higiene || ''],
+    ...clavesAspecto(rs).map(k => [textoPregunta('aspecto', k), r => (r.aspectos || {})[k] || '']),
     ['Recomendaría', r => r.recomienda === true ? 'Sí' : r.recomienda === false ? 'No' : ''],
-    ['Motivos', r => (r.motivos || []).map(m => MOTIVOS_NOMBRE[m] || m).join(' | ')],
+    ['Motivos', r => (r.motivos || []).map(m => textoPregunta('motivo', m)).join(' | ')],
     ['Comentario', r => r.comentario || ''],
     ['Adjuntos', r => (r.adjuntos || []).join(' | ')],
   ];
@@ -532,17 +619,11 @@ function render() {
     <div class="kpi"><div class="valor">${(() => { const c = rs.filter(r => r.recomienda !== null && r.recomienda !== undefined); return c.length ? Math.round(c.filter(r => r.recomienda).length / c.length * 100) + '%' : '—'; })()}</div><div class="nombre">Recomendarían la clínica</div></div>`;
 
   // Promedio por aspecto
-  const ASPECTOS = [
-    ['aspecto_trato', 'Trato y amabilidad'],
-    ['aspecto_rapidez', 'Rapidez de la atención'],
-    ['aspecto_informacion', 'Claridad de la información'],
-    ['aspecto_cuidado', 'Enfermería: cuidado en procedimientos'],
-    ['aspecto_higiene', 'Enfermería: higiene y limpieza'],
-  ];
-  document.getElementById('aspectos').innerHTML = ASPECTOS.map(([campo, nombre]) => {
-    const con = rs.filter(r => r[campo]);
+  document.getElementById('aspectos').innerHTML = clavesAspecto(rs).map(clave => {
+    const nombre = esc(textoPregunta('aspecto', clave));
+    const con = rs.filter(r => (r.aspectos || {})[clave]);
     if (!con.length) return `<div class="fila"><div class="quien">${nombre}</div><div class="n">sin datos</div></div>`;
-    const p = con.reduce((s, r) => s + r[campo], 0) / con.length;
+    const p = con.reduce((s, r) => s + r.aspectos[clave], 0) / con.length;
     return `
       <div class="fila">
         <div class="quien">${nombre}</div>
@@ -579,7 +660,7 @@ function render() {
   document.getElementById('motivos').innerHTML = motivos.length
     ? motivos.map(([m, n]) => `
       <div class="fila">
-        <div class="quien">${esc(MOTIVOS_NOMBRE[m] || m)}</div>
+        <div class="quien">${esc(textoPregunta('motivo', m))}</div>
         <div class="barra-fondo"><div class="barra" style="width:${n / maxM * 100}%; background:var(--ambar)"></div></div>
         <div class="n">${n}</div>
       </div>`).join('')
@@ -591,7 +672,7 @@ function render() {
     ? conComentario.map(r => {
         const fecha = new Date(r.creado_en).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
         const claseNota = r.calificacion <= 2 ? 'mala' : r.calificacion === 3 ? 'media' : 'buena';
-        const tags = (r.motivos || []).map(m => `<span class="motivo-tag">${esc(MOTIVOS_NOMBRE[m] || m)}</span>`).join('');
+        const tags = (r.motivos || []).map(m => `<span class="motivo-tag">${esc(textoPregunta('motivo', m))}</span>`).join('');
         return `
         <div class="comentario">
           <div class="meta">
