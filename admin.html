@@ -603,6 +603,7 @@ function descargarExcel() {
     ['Fecha', r => new Date(r.creado_en).toLocaleString('es-PE')],
     ['Área', r => r.servicio === 'recepcion' ? 'Recepción' : 'Emergencia'],
     ['Cargo', r => ROL_NOMBRE[r.rol] || r.rol || ''],
+    ['Área / especialidad', r => r.area || ''],
     ['Persona', r => r.personal_nombre || 'Sin identificar'],
     ['Calificación', r => r.calificacion],
     ...clavesAspecto(rs).map(k => [textoPregunta('aspecto', k), r => (r.aspectos || {})[k] || '']),
@@ -696,7 +697,7 @@ function render() {
         <div class="comentario">
           <div class="meta">
             <span class="nota ${claseNota}">${r.calificacion}/5</span>
-            <span>${r.servicio === 'recepcion' ? 'Recepción' : 'Emergencia'}${r.servicio === 'emergencia' && r.rol ? ' (' + (ROL_NOMBRE[r.rol] || r.rol) + ')' : ''}</span>
+            <span>${r.servicio === 'recepcion' ? 'Recepción' : 'Emergencia'}${r.servicio === 'emergencia' && r.rol ? ' (' + (ROL_NOMBRE[r.rol] || r.rol) + ')' : ''}${r.area ? ' · ' + esc(r.area) : ''}</span>
             ${r.recomienda === false ? '<span class="motivo-tag" style="background:#fee2e2;color:#991b1b">No recomendaría</span>' : ''}
             ${r.personal_nombre ? `<span>· ${esc(r.personal_nombre)}</span>` : ''}
             <span>· ${fecha}</span>

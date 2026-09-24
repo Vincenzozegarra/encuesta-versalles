@@ -76,7 +76,6 @@
     text-align: center;
     cursor: pointer;
   }
-  .grupo-titulo { grid-column: 1 / -1; font-weight: 700; color: var(--azul-oscuro); margin-top: 10px; font-size: 1rem; }
   .card-persona:active { border-color: var(--azul); background: #eff6ff; }
   .btn-volver {
     background: none;
@@ -285,6 +284,13 @@
     <button class="btn-servicio" data-rol="obstetra" onclick="elegirRol('obstetra')"><span class="icono">🤰</span> Obstetricia</button>
   </section>
 
+  <!-- Paso 1c: área dentro del cargo (Admisión, Seguros, Pediatría…) -->
+  <section class="paso" id="paso-area">
+    <button class="btn-volver" onclick="volver()">← Volver</button>
+    <h1>¿En qué área te atendieron?</h1>
+    <div id="botones-area"></div>
+  </section>
+
   <!-- Paso 2: persona -->
   <section class="paso" id="paso-persona">
     <button class="btn-volver" onclick="volver()">← Volver</button>
@@ -345,7 +351,7 @@
   </section>
 
 </main>
-<footer>Clínica Versalles · Encuesta anónima de satisfacción · v10</footer>
+<footer>Clínica Versalles · Encuesta anónima de satisfacción · v11</footer>
 
 <script>
 const SUPABASE_URL = 'https://cvijxlgdshfwqszbqgkr.supabase.co';
@@ -360,7 +366,7 @@ const CARITAS = [
 ];
 
 const estado = {
-  servicio: null, rol: null, personal: null, calificacion: null, motivos: [],
+  servicio: null, rol: null, area: null, personal: null, calificacion: null, motivos: [],
   aspectos: {}, recomienda: null,
 };
 let personalCache = [];
@@ -461,22 +467,37 @@ async function elegirRol(rol) {
   document.getElementById('error-personal').style.display = 'none';
   pintarPreguntas(preguntas);
   personalCache = lista;
+  estado.area = null;
 
   if (!personalCache.length) { elegirPersona(null); return; }
 
+  // Varias áreas en el cargo: primero se elige el área (viene ordenado por área)
+  const areas = [...new Set(personalCache.map(p => p.area || 'Otros'))];
+  if (areas.length > 1) {
+    const cont = document.getElementById('botones-area');
+    cont.innerHTML = '';
+    for (const a of areas) {
+      const b = document.createElement('button');
+      b.className = 'btn-servicio';
+      b.textContent = a;
+      b.onclick = () => elegirArea(a);
+      cont.appendChild(b);
+    }
+    mostrar('paso-area');
+    return;
+  }
+  pintarPersonal(personalCache);
+}
+
+function elegirArea(area) {
+  estado.area = area === 'Otros' ? null : area;
+  pintarPersonal(personalCache.filter(p => (p.area || 'Otros') === area));
+}
+
+function pintarPersonal(lista) {
   const grid = document.getElementById('grid-personal');
   grid.innerHTML = '';
-  // Título por área/especialidad (viene ordenado por área) solo si hay más de una
-  const variasAreas = new Set(personalCache.map(p => p.area || '')).size > 1;
-  let areaActual;
-  for (const p of personalCache) {
-    if (variasAreas && (p.area || '') !== areaActual) {
-      areaActual = p.area || '';
-      const t = document.createElement('div');
-      t.className = 'grupo-titulo';
-      t.textContent = areaActual || 'Otros';
-      grid.appendChild(t);
-    }
+  for (const p of lista) {
     const card = document.createElement('button');
     card.className = 'card-persona';
     card.onclick = () => elegirPersona(p);
@@ -616,6 +637,7 @@ async function enviar() {
       body: JSON.stringify({
         servicio: estado.servicio,
         rol: estado.rol,
+        area: estado.area || estado.personal?.area || null,
         personal_id: estado.personal ? estado.personal.id : null,
         calificacion: estado.calificacion,
         motivos: estado.calificacion <= 3 ? estado.motivos : [],
