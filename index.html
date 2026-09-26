@@ -261,53 +261,52 @@
     font-size: .92rem;
   }
 
-  /* Intro de 4 s: paciente (turquesa) y clínica (azul) del logo se encuentran; sus opiniones llegan a la clínica */
+  /* Intro de 4 s: familias caminan y entran a la clínica; luego el logo original */
   #intro {
-    position: fixed; inset: 0; z-index: 100;
-    background: radial-gradient(circle at 50% 38%, #ffffff 0%, var(--fondo) 70%);
+    position: fixed; inset: 0; z-index: 100; background: #fff;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 24px; text-align: center; cursor: pointer;
+    padding: 24px 0; text-align: center; cursor: pointer; overflow: hidden;
     animation: intro-salir .5s ease-in 3.5s forwards;
   }
-  #intro .escena { position: relative; width: min(78vw, 340px); aspect-ratio: 1; }
-  #intro svg.simbolo { width: 100%; height: 100%; overflow: visible; animation: simbolo-sube .6s cubic-bezier(.6,0,.3,1) 2.25s forwards; }
-  #intro .cuerpo { fill: none; stroke-width: 35; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: trazar 1s cubic-bezier(.65,0,.35,1) forwards; }
-  #intro .cuerpo.azul { animation-delay: .15s; }
-  #intro .cabeza { fill: none; stroke-width: 35; transform-box: fill-box; transform-origin: center; transform: scale(0); animation: brotar .45s cubic-bezier(.3,1.6,.5,1) forwards; }
-  #intro .cabeza.turquesa { animation-delay: .75s; }
-  #intro .cabeza.azul { animation-delay: .9s, 1.95s; animation-name: brotar, recibir; animation-duration: .45s, .5s; }
-  #intro .turquesa { stroke: #10b3a8; }
-  #intro .azul { stroke: #0870d0; }
-  #intro .onda { fill: none; stroke: #0870d0; stroke-width: 6; opacity: 0; transform-box: fill-box; transform-origin: center; animation: onda .7s ease-out 1.95s; }
-  #intro .burbuja { opacity: 0; transform-box: view-box; animation: viajar 1.05s cubic-bezier(.45,0,.4,1) forwards; }
-  #intro .burbuja:nth-of-type(1) { animation-delay: .95s; }
-  #intro .burbuja:nth-of-type(2) { animation-delay: 1.12s; }
-  #intro .burbuja:nth-of-type(3) { animation-delay: 1.29s; }
+  #intro .escena { position: relative; width: min(100vw, 460px); aspect-ratio: 350 / 220; }
+  #intro svg.mundo { width: 100%; height: 100%; display: block; border-radius: 0 0 24px 24px;
+    transform-origin: 77.4% 66%; animation: entrar-puerta .45s cubic-bezier(.7,0,.9,.4) 2.45s forwards; }
+  #intro .fila { animation: caminar 2.35s cubic-bezier(.25,.1,.5,1) .15s both; }
+  #intro .bob { animation: bob .44s ease-in-out infinite; }
+  #intro .ext { transform-box: fill-box; transform-origin: top center; animation: paso .44s ease-in-out infinite alternate; }
+  #intro .ext.b { animation-name: paso-b; }
+  #intro .hoja { transition: none; animation: abrir-izq .45s ease-out 1.2s forwards; }
+  #intro .hoja.der { animation-name: abrir-der; }
+  #intro .ventana { fill: #dbeafe; animation: encender .35s ease forwards; }
+  #intro .corazon { opacity: 0; transform-box: fill-box; transform-origin: center; animation: subir-corazon .9s ease-out forwards; }
+  #intro .corazon { translate: 0 0; }
+  #intro .sol { transform-box: fill-box; transform-origin: center; animation: sol 2.6s ease-out both; }
+  #intro .nube { animation: nube 4s linear both; }
+  #intro .nube.lenta { animation-duration: 6s; }
   #intro .logo-final {
-    position: absolute; left: 50%; top: 50%; width: 118%; max-width: none;
-    transform: translate(-50%, -50%) scale(.85); opacity: 0;
-    animation: logo-entra .6s cubic-bezier(.2,.9,.3,1.2) 2.45s forwards;
+    position: absolute; left: 6%; top: 50%; width: 88%; height: auto;
+    transform: translateY(-50%) scale(.9); opacity: 0;
+    animation: logo-entra .55s cubic-bezier(.2,.9,.3,1.15) 2.85s forwards;
   }
-  #intro .frase { position: absolute; left: 0; right: 0; bottom: 14%; padding: 0 24px; font-size: 1.25rem; font-weight: 700; color: var(--texto); line-height: 1.35; opacity: 0; }
+  #intro .frase { margin-top: 18px; min-height: 3em; padding: 0 24px; font-size: 1.2rem; font-weight: 700; color: var(--texto); line-height: 1.35; opacity: 0; position: absolute; left: 0; right: 0; bottom: calc(50% - min(100vw, 460px) * .314 - 5.2em); }
   #intro .frase b { color: #0870d0; }
-  #intro .frase.uno { animation: frase 1.4s ease .8s forwards; }
-  #intro .frase.dos { animation: frase-final 1.2s ease 2.35s forwards; }
-  #intro .saltar { position: absolute; top: 14px; right: 16px; font-size: .8rem; color: var(--gris); }
-  @keyframes trazar { to { stroke-dashoffset: 0; } }
-  @keyframes brotar { to { transform: scale(1); } }
-  @keyframes recibir { 0%, 100% { transform: scale(1); } 40% { transform: scale(1.18); } }
-  @keyframes onda { 0% { opacity: .6; transform: scale(1); } 100% { opacity: 0; transform: scale(2.4); } }
-  /* Arco del paciente (cabeza turquesa) a la clínica (cabeza azul) */
-  @keyframes viajar {
-    0%   { opacity: 0; transform: translate(250px, 150px) scale(.2); }
-    18%  { opacity: 1; transform: translate(275px, 70px) scale(1); }
-    55%  { opacity: 1; transform: translate(350px, 40px) scale(1); }
-    100% { opacity: 0; transform: translate(428px, 262px) scale(.25); }
-  }
-  @keyframes simbolo-sube { to { transform: translateY(-8%) scale(.55); opacity: 0; } }
-  @keyframes logo-entra { to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
-  @keyframes frase { 0% { opacity: 0; transform: translateY(10px); } 18%, 82% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-6px); } }
-  @keyframes frase-final { 0% { opacity: 0; transform: translateY(10px); } 25%, 100% { opacity: 1; transform: none; } }
+  #intro .frase.uno { animation: frase 2.1s ease .45s forwards; }
+  #intro .frase.dos { animation: frase-final .8s ease 2.95s forwards; }
+  #intro .saltar { position: absolute; top: 14px; right: 16px; font-size: .8rem; color: var(--gris); z-index: 1; }
+  @keyframes caminar { from { transform: translateX(60px); } to { transform: translateX(520px); } }
+  @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.6px); } }
+  @keyframes paso { from { transform: rotate(24deg); } to { transform: rotate(-24deg); } }
+  @keyframes paso-b { from { transform: rotate(-24deg); } to { transform: rotate(24deg); } }
+  @keyframes abrir-izq { to { transform: translateX(-21px); } }
+  @keyframes abrir-der { to { transform: translateX(21px); } }
+  @keyframes encender { to { fill: #fde68a; } }
+  @keyframes subir-corazon { 0% { opacity: 0; transform: translateY(0) scale(.3); } 25% { opacity: 1; transform: translateY(-14px) scale(1.9); } 100% { opacity: 0; transform: translateY(-80px) scale(1.5); } }
+  @keyframes sol { from { transform: translateY(30px) scale(.8); } to { transform: none; } }
+  @keyframes nube { to { transform: translateX(-40px); } }
+  @keyframes entrar-puerta { to { transform: scale(5); opacity: 0; } }
+  @keyframes logo-entra { to { transform: translateY(-50%) scale(1); opacity: 1; } }
+  @keyframes frase { 0% { opacity: 0; transform: translateY(10px); } 15%, 85% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+  @keyframes frase-final { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
   @keyframes intro-salir { to { opacity: 0; visibility: hidden; } }
   @media (prefers-reduced-motion: reduce) { #intro { display: none; } }
   footer { padding: 16px; color: var(--gris); font-size: .78rem; text-align: center; }
@@ -317,28 +316,95 @@
 <div id="intro" aria-hidden="true">
   <span class="saltar">Tocar para continuar</span>
   <div class="escena">
-    <svg class="simbolo" viewBox="40 20 540 580">
-      <path class="cuerpo azul" pathLength="1" d="M281 391L411.7 371A88 88 0 1 1 349.8 503.8Z"/>
-      <path class="cuerpo turquesa" pathLength="1" d="M337 417L206.3 437A88 88 0 1 1 268.2 304.2Z"/>
-      <circle class="onda" cx="428" cy="279" r="60"/>
-      <circle class="cabeza turquesa" cx="250" cy="180" r="42"/>
-      <circle class="cabeza azul" cx="428" cy="279" r="42"/>
-      <g class="burbuja"><g transform="translate(-26,-26)">
-        <path d="M8 0h36a8 8 0 0 1 8 8v24a8 8 0 0 1-8 8H22l-10 9v-9H8a8 8 0 0 1-8-8V8a8 8 0 0 1 8-8z" fill="#fff" stroke="#10b3a8" stroke-width="3"/>
-        <path d="M26 31s-10-6-10-12a5 5 0 0 1 10-2 5 5 0 0 1 10 2c0 6-10 12-10 12z" fill="#f43f5e"/>
-      </g></g>
-      <g class="burbuja"><g transform="translate(-26,-26)">
-        <path d="M8 0h36a8 8 0 0 1 8 8v24a8 8 0 0 1-8 8H22l-10 9v-9H8a8 8 0 0 1-8-8V8a8 8 0 0 1 8-8z" fill="#fff" stroke="#10b3a8" stroke-width="3"/>
-        <circle cx="26" cy="20" r="11" fill="#fbbf24"/><circle cx="22" cy="18" r="1.6" fill="#0f2447"/><circle cx="30" cy="18" r="1.6" fill="#0f2447"/><path d="M21 22.5q5 5 10 0" stroke="#0f2447" stroke-width="2" fill="none" stroke-linecap="round"/>
-      </g></g>
-      <g class="burbuja"><g transform="translate(-26,-26)">
-        <path d="M8 0h36a8 8 0 0 1 8 8v24a8 8 0 0 1-8 8H22l-10 9v-9H8a8 8 0 0 1-8-8V8a8 8 0 0 1 8-8z" fill="#fff" stroke="#10b3a8" stroke-width="3"/>
-        <path d="M26 8l3.5 7.2 7.9 1.1-5.7 5.6 1.3 7.9L26 26.1l-7 3.7 1.3-7.9-5.7-5.6 7.9-1.1z" fill="#10b3a8"/>
-      </g></g>
+    <svg class="mundo" viewBox="40 78 350 220" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="cielo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dbeafe"/><stop offset="1" stop-color="#f0fdfa"/></linearGradient>
+        <radialGradient id="luz"><stop offset="0" stop-color="#fff7d6"/><stop offset="1" stop-color="#fde68a"/></radialGradient>
+        <clipPath id="hasta-puerta"><rect x="-400" y="0" width="712" height="300"/></clipPath>
+      </defs>
+      <rect width="400" height="300" fill="url(#cielo)"/>
+      <circle class="sol" cx="70" cy="80" r="26" fill="#fde68a"/>
+      <g class="nube" fill="#fff"><ellipse cx="160" cy="60" rx="26" ry="9"/><ellipse cx="175" cy="53" rx="15" ry="10"/></g>
+      <g class="nube lenta" fill="#fff"><ellipse cx="330" cy="40" rx="22" ry="7"/><ellipse cx="342" cy="34" rx="12" ry="8"/></g>
+      <!-- árbol -->
+      <rect x="196" y="212" width="6" height="38" rx="3" fill="#0f766e"/>
+      <circle cx="199" cy="204" r="17" fill="#10b3a8"/><circle cx="189" cy="214" r="11" fill="#10b3a8"/>
+      <!-- clínica -->
+      <g class="clinica">
+        <rect x="240" y="128" width="142" height="122" rx="6" fill="#fff" stroke="#cbd5e1" stroke-width="2"/>
+        <rect x="236" y="120" width="150" height="12" rx="4" fill="#0870d0"/>
+        <g class="letrero"><rect x="291" y="92" width="40" height="30" rx="6" fill="#10b3a8"/>
+          <path d="M307 99h8v5h5v8h-5v5h-8v-5h-5v-8h5z" fill="#fff"/></g>
+        <rect class="ventana" style="animation-delay:1.60s" x="252" y="142" width="22" height="18" rx="3"/><rect class="ventana" style="animation-delay:1.68s" x="284" y="142" width="22" height="18" rx="3"/><rect class="ventana" style="animation-delay:1.76s" x="316" y="142" width="22" height="18" rx="3"/><rect class="ventana" style="animation-delay:1.84s" x="348" y="142" width="22" height="18" rx="3"/><rect class="ventana" style="animation-delay:1.92s" x="252" y="172" width="22" height="18" rx="3"/><rect class="ventana" style="animation-delay:2.00s" x="348" y="172" width="22" height="18" rx="3"/>
+        <rect x="288" y="196" width="46" height="54" rx="3" fill="url(#luz)"/>
+        <rect class="hoja izq" x="288" y="196" width="23" height="54" fill="#bfdbfe" stroke="#93c5fd"/>
+        <rect class="hoja der" x="311" y="196" width="23" height="54" fill="#bfdbfe" stroke="#93c5fd"/>
+        <rect x="284" y="192" width="54" height="5" rx="2" fill="#0870d0"/>
+      </g>
+      <rect y="250" width="400" height="50" fill="#e2e8f0"/>
+      <rect y="250" width="400" height="3" fill="#cbd5e1"/>
+      <g clip-path="url(#hasta-puerta)"><g class="fila"><g transform="translate(0,250) scale(1.0)"><g class="bob" style="animation-delay:-0.00s" stroke="#0870d0" fill="#0870d0" stroke-linecap="round">
+  <line class="ext a" style="animation-delay:-0.00s" x1="0" y1="-36" x2="0" y2="-23" stroke-width="5.5"/>
+  <line class="ext b" style="animation-delay:-0.00s" x1="0" y1="-20" x2="0" y2="-2" stroke-width="6.5"/>
+  <line class="ext a" style="animation-delay:-0.00s" x1="0" y1="-20" x2="0" y2="-2" stroke-width="6.5"/>
+  <line x1="0" y1="-37" x2="0" y2="-21" stroke-width="11"/>
+  <circle cx="0" cy="-47" r="6.5" stroke="none"/>
+  
+  <line class="ext b" style="animation-delay:-0.00s" x1="0" y1="-36" x2="0" y2="-23" stroke-width="5.5"/>
+</g></g><g transform="translate(-17,250) scale(0.62)"><g class="bob" style="animation-delay:-0.20s" stroke="#10b3a8" fill="#10b3a8" stroke-linecap="round">
+  <line class="ext a" style="animation-delay:-0.20s" x1="0" y1="-36" x2="0" y2="-23" stroke-width="5.5"/>
+  <line class="ext b" style="animation-delay:-0.20s" x1="0" y1="-20" x2="0" y2="-2" stroke-width="6.5"/>
+  <line class="ext a" style="animation-delay:-0.20s" x1="0" y1="-20" x2="0" y2="-2" stroke-width="6.5"/>
+  <line x1="0" y1="-37" x2="0" y2="-21" stroke-width="11"/>
+  <circle cx="0" cy="-47" r="6.5" stroke="none"/>
+  <path d="M-5 -52 q-6 1 -5 8" fill="none" stroke-width="3"/>
+  <line class="ext b" style="animation-delay:-0.20s" x1="0" y1="-36" x2="0" y2="-23" stroke-width="5.5"/>
+</g></g><g transform="translate(-33,250) scale(0.95)"><g class="bob" style="animation-delay:-0.10s" stroke="#0870d0" fill="#0870d0" stroke-linecap="round">
+  <line class="ext a" style="animation-delay:-0.10s" x1="0" y1="-36" x2="0" y2="-23" stroke-width="5.5"/>
+  <line class="ext b" style="animation-delay:-0.10s" x1="0" y1="-20" x2="0" y2="-2" stroke-width="6.5"/>
+  <line class="ext a" style="animation-delay:-0.10s" x1="0" y1="-20" x2="0" y2="-2" stroke-width="6.5"/>
+  <line x1="0" y1="-37" x2="0" y2="-21" stroke-width="11"/>
+  <circle cx="0" cy="-47" r="6.5" stroke="none"/>
+  <path d="M-5 -52 q-6 1 -5 8" fill="none" stroke-width="3"/>
+  <line class="ext b" style="animation-delay:-0.10s" x1="0" y1="-36" x2="0" y2="-23" stroke-width="5.5"/>
+</g></g><g transform="translate(-85,250) scale(0.98)"><g class="bob" style="animation-delay:-0.30s" stroke="#1e3a8a" fill="#1e3a8a" stroke-linecap="round">
+  <line class="ext a" style="animation-delay:-0.30s" x1="0" y1="-36" x2="0" y2="-23" stroke-width="5.5"/>
+  <line class="ext b" style="animation-delay:-0.30s" x1="0" y1="-20" x2="0" y2="-2" stroke-width="6.5"/>
+  <line class="ext a" style="animation-delay:-0.30s" x1="0" y1="-20" x2="0" y2="-2" stroke-width="6.5"/>
+  <line x1="0" y1="-37" x2="0" y2="-21" stroke-width="11"/>
+  <circle cx="0" cy="-47" r="6.5" stroke="none"/>
+  <line x1="9" y1="-24" x2="12" y2="0" stroke-width="2.5"/>
+  <line class="ext b" style="animation-delay:-0.30s" x1="0" y1="-36" x2="0" y2="-23" stroke-width="5.5"/>
+</g></g><g transform="translate(-101,250) scale(0.6)"><g class="bob" style="animation-delay:-0.05s" stroke="#10b3a8" fill="#10b3a8" stroke-linecap="round">
+  <line class="ext a" style="animation-delay:-0.05s" x1="0" y1="-36" x2="0" y2="-23" stroke-width="5.5"/>
+  <line class="ext b" style="animation-delay:-0.05s" x1="0" y1="-20" x2="0" y2="-2" stroke-width="6.5"/>
+  <line class="ext a" style="animation-delay:-0.05s" x1="0" y1="-20" x2="0" y2="-2" stroke-width="6.5"/>
+  <line x1="0" y1="-37" x2="0" y2="-21" stroke-width="11"/>
+  <circle cx="0" cy="-47" r="6.5" stroke="none"/>
+  
+  <line class="ext b" style="animation-delay:-0.05s" x1="0" y1="-36" x2="0" y2="-23" stroke-width="5.5"/>
+</g></g><g transform="translate(-150,250) scale(0.95)"><g class="bob" style="animation-delay:-0.25s" stroke="#10b3a8" fill="#10b3a8" stroke-linecap="round">
+  <line class="ext a" style="animation-delay:-0.25s" x1="0" y1="-36" x2="0" y2="-23" stroke-width="5.5"/>
+  <line class="ext b" style="animation-delay:-0.25s" x1="0" y1="-20" x2="0" y2="-2" stroke-width="6.5"/>
+  <line class="ext a" style="animation-delay:-0.25s" x1="0" y1="-20" x2="0" y2="-2" stroke-width="6.5"/>
+  <line x1="0" y1="-37" x2="0" y2="-21" stroke-width="11"/>
+  <circle cx="0" cy="-47" r="6.5" stroke="none"/>
+  <circle cx="5" cy="-27" r="6.5" stroke="none"/><path d="M-5 -52 q-6 1 -5 8" fill="none" stroke-width="3"/>
+  <line class="ext b" style="animation-delay:-0.25s" x1="0" y1="-36" x2="0" y2="-23" stroke-width="5.5"/>
+</g></g><g transform="translate(-167,250) scale(1.0)"><g class="bob" style="animation-delay:-0.15s" stroke="#1e3a8a" fill="#1e3a8a" stroke-linecap="round">
+  <line class="ext a" style="animation-delay:-0.15s" x1="0" y1="-36" x2="0" y2="-23" stroke-width="5.5"/>
+  <line class="ext b" style="animation-delay:-0.15s" x1="0" y1="-20" x2="0" y2="-2" stroke-width="6.5"/>
+  <line class="ext a" style="animation-delay:-0.15s" x1="0" y1="-20" x2="0" y2="-2" stroke-width="6.5"/>
+  <line x1="0" y1="-37" x2="0" y2="-21" stroke-width="11"/>
+  <circle cx="0" cy="-47" r="6.5" stroke="none"/>
+  
+  <line class="ext b" style="animation-delay:-0.15s" x1="0" y1="-36" x2="0" y2="-23" stroke-width="5.5"/>
+</g></g></g></g>
+      <g transform="translate(300,180)"><path class="corazon" style="animation-delay:1.75s" d="M0 5s-7-4.2-7-8.4a3.5 3.5 0 0 1 7-1.4 3.5 3.5 0 0 1 7 1.4C7 .8 0 5 0 5z" fill="#f43f5e"/></g><g transform="translate(322,176)"><path class="corazon" style="animation-delay:1.95s" d="M0 5s-7-4.2-7-8.4a3.5 3.5 0 0 1 7-1.4 3.5 3.5 0 0 1 7 1.4C7 .8 0 5 0 5z" fill="#10b3a8"/></g><g transform="translate(311,170)"><path class="corazon" style="animation-delay:2.15s" d="M0 5s-7-4.2-7-8.4a3.5 3.5 0 0 1 7-1.4 3.5 3.5 0 0 1 7 1.4C7 .8 0 5 0 5z" fill="#f43f5e"/></g><g transform="translate(292,172)"><path class="corazon" style="animation-delay:2.3s" d="M0 5s-7-4.2-7-8.4a3.5 3.5 0 0 1 7-1.4 3.5 3.5 0 0 1 7 1.4C7 .8 0 5 0 5z" fill="#0870d0"/></g>
     </svg>
     <img class="logo-final" src="https://cvijxlgdshfwqszbqgkr.supabase.co/storage/v1/object/public/encuesta-fotos/logo-versalles.png" alt="">
   </div>
-  <p class="frase uno">Para nosotros, <b>tú eres lo más importante</b></p>
+  <p class="frase uno">Cada familia que llega <b>es parte de la nuestra</b></p>
   <p class="frase dos">Tu opinión nos ayuda a <b>cuidarte mejor</b></p>
 </div>
 <header><img src="https://cvijxlgdshfwqszbqgkr.supabase.co/storage/v1/object/public/encuesta-fotos/logo-versalles.png" alt="Clínica Versalles"></header>
@@ -428,7 +494,7 @@
   </section>
 
 </main>
-<footer>Clínica Versalles · Encuesta anónima de satisfacción · v12</footer>
+<footer>Clínica Versalles · Encuesta anónima de satisfacción · v13</footer>
 
 <script>
 const SUPABASE_URL = 'https://cvijxlgdshfwqszbqgkr.supabase.co';
