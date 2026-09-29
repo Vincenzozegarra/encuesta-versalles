@@ -485,7 +485,7 @@ document.getElementById('cambiar-foto').addEventListener('change', async e => {
 // Una ficha por persona (nombre + cargo); cada sección es una fila en la base
 function renderPersonal() {
   // Sugerencias de área: las ya usadas + especialidades comunes
-  const areas = new Set(['Emergencia', 'Medicina general', 'Pediatría', 'Ginecología', 'Admisión', 'Seguros', 'Admisión natal', 'Presupuestos']);
+  const areas = new Set(['Emergencia', 'Hospitalización', 'Consultorio', 'Medicina general', 'Pediatría', 'Ginecología', 'Admisión', 'Seguros', 'Admisión natal', 'Presupuestos']);
   personal.forEach(p => p.area && areas.add(p.area));
   document.getElementById('areas').innerHTML = [...areas].map(a => `<option value="${esc(a)}">`).join('');
   const grupos = {};
