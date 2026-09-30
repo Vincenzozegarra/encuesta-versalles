@@ -271,6 +271,8 @@
 const SUPABASE_URL = 'https://cvijxlgdshfwqszbqgkr.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_SjOE5lvfh0fyyDRHQMc23w_ItvE2Yb4';
 
+// Lugar de trabajo de enfermería: se elige de esta lista, no se escribe
+const LUGARES_ENFERMERIA = ['Emergencia', 'Hospitalización', 'Centro Quirúrgico', 'Consultorio externo'];
 const ROL_NOMBRE = { recepcion: 'Admisión', enfermeria: 'Enfermería', medico: 'Médico', obstetra: 'Obstetricia' };
 
 let todas = [];
@@ -485,7 +487,7 @@ document.getElementById('cambiar-foto').addEventListener('change', async e => {
 // Una ficha por persona (nombre + cargo); cada sección es una fila en la base
 function renderPersonal() {
   // Sugerencias de área: las ya usadas + especialidades comunes
-  const areas = new Set(['Emergencia', 'Hospitalización', 'Consultorio', 'Medicina general', 'Pediatría', 'Ginecología', 'Admisión', 'Seguros', 'Admisión natal', 'Presupuestos']);
+  const areas = new Set([...LUGARES_ENFERMERIA, 'Medicina general', 'Pediatría', 'Ginecología', 'Admisión', 'Seguros', 'Admisión natal', 'Presupuestos']);
   personal.forEach(p => p.area && areas.add(p.area));
   document.getElementById('areas').innerHTML = [...areas].map(a => `<option value="${esc(a)}">`).join('');
   const grupos = {};
@@ -508,12 +510,16 @@ function renderPersonal() {
         <div class="cargo">${ROL_NOMBRE[p.rol] || esc(p.rol)}${p.area ? ' · ' + esc(p.area) : ''}${algunaActiva ? '' : ' · oculta en la encuesta'}</div>
         <div>${filas.map(f => `<button class="chip ${f.activo ? 'on' : 'off'}" data-id="${f.id}" data-activo="${f.activo}" title="Tocar para ${f.activo ? 'ocultar' : 'mostrar'} en esta sección">${SERVICIO_NOMBRE[f.servicio] || f.servicio}</button>`).join('')}</div>
       </div>
-      <button class="btn sec" data-accion="area">Cambiar área</button>
+      ${p.rol === 'enfermeria'
+        ? `<select class="btn sec" data-accion="lugar" title="Lugar donde trabaja"><option value="">Elegir lugar…</option>${[...new Set([...LUGARES_ENFERMERIA, ...(p.area ? [p.area] : [])])].map(l => `<option ${l === p.area ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`
+        : `<button class="btn sec" data-accion="area">Cambiar área</button>`}
       <button class="btn sec" data-accion="foto">Cambiar foto</button>
       <button class="btn ${algunaActiva ? 'sec' : ''}" data-accion="activo">${algunaActiva ? 'Ocultar' : 'Mostrar'}</button>`;
     div.querySelectorAll('.chip').forEach(c => c.onclick = () => actualizar([c.dataset.id], c.dataset.activo !== 'true', null));
     div.querySelector('[data-accion=foto]').onclick = () => pedirFoto(ids);
-    div.querySelector('[data-accion=area]').onclick = () => {
+    const lugar = div.querySelector('[data-accion=lugar]');
+    if (lugar) lugar.onchange = () => actualizar(ids, null, null, lugar.value);
+    else div.querySelector('[data-accion=area]').onclick = () => {
       const nueva = prompt(`Área o especialidad de ${p.nombre} (vacío para quitar):`, p.area || '');
       if (nueva !== null) actualizar(ids, null, null, nueva.trim());
     };
