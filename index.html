@@ -415,6 +415,7 @@
     <h1>¿Dónde te atendieron hoy?</h1>
     <button class="btn-servicio" onclick="elegirServicio('recepcion')"><span class="icono">🏥</span> Recepción / Admisión</button>
     <button class="btn-servicio" onclick="elegirServicio('emergencia')"><span class="icono">🚑</span> Emergencia</button>
+    <button class="btn-servicio" onclick="elegirServicio('laboratorio')"><span class="icono">🧪</span> Laboratorio</button>
   </section>
 
   <!-- Paso 1b: rol (solo emergencia) -->
@@ -541,7 +542,7 @@ function yaRespondio() {
 // Emergencia siempre ofrece los 4 cargos; si un cargo no tiene fotos, se califica en general
 function elegirServicio(servicio) {
   estado.servicio = servicio;
-  if (servicio !== 'emergencia') { elegirRol('recepcion'); return; }
+  if (servicio !== 'emergencia') { elegirRol(servicio === 'laboratorio' ? 'laboratorio' : 'recepcion'); return; }
   mostrar('paso-rol');
 }
 
@@ -821,7 +822,7 @@ function otraEncuesta() {
     return;
   }
   const s = params.get('s');
-  if (s === 'recepcion' || s === 'emergencia') { elegirServicio(s); }
+  if (['recepcion', 'emergencia', 'laboratorio'].includes(s)) { elegirServicio(s); }
   else { mostrar('paso-servicio'); }
 })();
 </script>

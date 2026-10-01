@@ -176,6 +176,7 @@
             <option value="enfermeria">Enfermería</option>
             <option value="medico">Médico</option>
             <option value="obstetra">Obstetricia</option>
+            <option value="laboratorio">Laboratorio</option>
           </select>
         </label>
         <label>Área o especialidad (opcional — agrupa las fotos en la encuesta)
@@ -187,6 +188,7 @@
           <div class="checks">
             <label><input type="checkbox" id="p-recepcion" checked> Recepción</label>
             <label><input type="checkbox" id="p-emergencia" checked> Emergencia</label>
+            <label><input type="checkbox" id="p-laboratorio" disabled> Laboratorio</label>
           </div>
         </div>
         <label>Foto (opcional — se recorta cuadrada, centrada arriba)
@@ -207,6 +209,7 @@
         <button class="filtro" data-r="enfermeria">Enfermería</button>
         <button class="filtro" data-r="medico">Médico</button>
         <button class="filtro" data-r="obstetra">Obstetricia</button>
+        <button class="filtro" data-r="laboratorio">Laboratorio</button>
       </div>
       <p style="color:var(--gris);font-size:.88rem">Los cambios se ven en la encuesta al instante. Ocultar una pregunta no borra las respuestas pasadas.</p>
 
@@ -227,6 +230,7 @@
       <button class="filtro" data-f="emergencia">Emergencia</button>
       <button class="filtro" data-f="enfermeria">Enfermería</button>
       <button class="filtro" data-f="obstetra">Obstetricia</button>
+      <button class="filtro" data-f="laboratorio">Laboratorio</button>
     </div>
 
     <div class="filtros-titulo">Período</div>
@@ -273,7 +277,7 @@ const SUPABASE_KEY = 'sb_publishable_SjOE5lvfh0fyyDRHQMc23w_ItvE2Yb4';
 
 // Lugar de trabajo de enfermería: se elige de esta lista, no se escribe
 const LUGARES_ENFERMERIA = ['Emergencia', 'Hospitalización', 'Centro Quirúrgico', 'Consultorio externo'];
-const ROL_NOMBRE = { recepcion: 'Admisión', enfermeria: 'Enfermería', medico: 'Médico', obstetra: 'Obstetricia' };
+const ROL_NOMBRE = { recepcion: 'Admisión', enfermeria: 'Enfermería', medico: 'Médico', obstetra: 'Obstetricia', laboratorio: 'Laboratorio' };
 
 let todas = [];
 let personal = [];
@@ -392,19 +396,23 @@ function textoPregunta(tipo, clave) {
 // Claves de aspecto a mostrar: las de las preguntas (en su orden) más cualquiera que venga en respuestas viejas
 function clavesAspecto(rs) {
   const claves = [];
-  for (const q of preguntas) if (q.tipo === 'aspecto' && (!['enfermeria', 'obstetra'].includes(filtro) || q.rol === filtro) && !claves.includes(q.clave)) claves.push(q.clave);
+  for (const q of preguntas) if (q.tipo === 'aspecto' && (!['enfermeria', 'obstetra', 'laboratorio'].includes(filtro) || q.rol === filtro) && !claves.includes(q.clave)) claves.push(q.clave);
   for (const r of rs) for (const k of Object.keys(r.aspectos || {})) if (!claves.includes(k)) claves.push(k);
   return claves;
 }
 
 // ---- Gestión de personal ----
-const SERVICIO_NOMBRE = { recepcion: 'Recepción', emergencia: 'Emergencia' };
+const SERVICIO_NOMBRE = { recepcion: 'Recepción', emergencia: 'Emergencia', laboratorio: 'Laboratorio' };
 
 // Recepción solo muestra Admisión en la encuesta: desmarca y bloquea para otros cargos
 document.getElementById('p-rol').addEventListener('change', e => {
-  const chk = document.getElementById('p-recepcion');
-  chk.disabled = e.target.value !== 'recepcion';
-  if (chk.disabled) chk.checked = false;
+  // Laboratorio: su personal va solo en la sección Laboratorio
+  const rol = e.target.value;
+  const [rec, eme, lab] = ['recepcion', 'emergencia', 'laboratorio'].map(s => document.getElementById('p-' + s));
+  rec.disabled = rol !== 'recepcion';
+  eme.disabled = lab.disabled = true;
+  if (rol === 'laboratorio') { rec.checked = eme.checked = false; lab.checked = true; }
+  else { eme.disabled = false; lab.checked = false; if (rec.disabled) rec.checked = false; }
 });
 
 // Recorte cuadrado centrado arriba (donde suele estar el rostro), máx 500px JPEG 80% (~40KB)
@@ -444,7 +452,7 @@ async function subirFoto(file) {
 async function crearPersona() {
   const nombre = document.getElementById('p-nombre').value.trim();
   const rol = document.getElementById('p-rol').value;
-  const servicios = ['recepcion', 'emergencia'].filter(s => document.getElementById('p-' + s).checked);
+  const servicios = ['recepcion', 'emergencia', 'laboratorio'].filter(s => document.getElementById('p-' + s).checked);
   const archivo = document.getElementById('p-foto').files[0];
   if (!nombre) return alert('Escribe el nombre.');
   if (!servicios.length) return alert('Marca al menos una sección.');
@@ -590,7 +598,7 @@ const nombreMes = d => d.toLocaleDateString('es-PE', { month: 'long', year: 'num
 function filtradas() {
   const r0 = rangoActivo();
   return todas.filter(r => {
-    if (filtro === 'recepcion' || filtro === 'emergencia') { if (r.servicio !== filtro) return false; }
+    if (['recepcion', 'emergencia', 'laboratorio'].includes(filtro)) { if (r.servicio !== filtro) return false; }
     else if ((filtro === 'enfermeria' || filtro === 'obstetra') && r.rol !== filtro) return false;
     const t = new Date(r.creado_en).getTime();
     if (r0.desde !== null && t < r0.desde) return false;
@@ -599,7 +607,7 @@ function filtradas() {
   });
 }
 
-const AREA_TEXTO = { todos: 'Todas las áreas', recepcion: 'Recepción', emergencia: 'Emergencia', enfermeria: 'Enfermería', obstetra: 'Obstetricia' };
+const AREA_TEXTO = { todos: 'Todas las áreas', recepcion: 'Recepción', emergencia: 'Emergencia', laboratorio: 'Laboratorio', enfermeria: 'Enfermería', obstetra: 'Obstetricia' };
 
 // Excel abre CSV con punto y coma; el BOM mantiene las tildes
 function descargarExcel() {
@@ -607,7 +615,7 @@ function descargarExcel() {
   if (!rs.length) return alert('No hay respuestas en ese período.');
   const cols = [
     ['Fecha', r => new Date(r.creado_en).toLocaleString('es-PE')],
-    ['Área', r => r.servicio === 'recepcion' ? 'Recepción' : 'Emergencia'],
+    ['Área', r => SERVICIO_NOMBRE[r.servicio] || r.servicio],
     ['Cargo', r => ROL_NOMBRE[r.rol] || r.rol || ''],
     ['Área / especialidad', r => r.area || ''],
     ['Persona', r => r.personal_nombre || 'Sin identificar'],
@@ -703,7 +711,7 @@ function render() {
         <div class="comentario">
           <div class="meta">
             <span class="nota ${claseNota}">${r.calificacion}/5</span>
-            <span>${r.servicio === 'recepcion' ? 'Recepción' : 'Emergencia'}${r.servicio === 'emergencia' && r.rol ? ' (' + (ROL_NOMBRE[r.rol] || r.rol) + ')' : ''}${r.area ? ' · ' + esc(r.area) : ''}</span>
+            <span>${SERVICIO_NOMBRE[r.servicio] || esc(r.servicio)}${r.servicio === 'emergencia' && r.rol ? ' (' + (ROL_NOMBRE[r.rol] || r.rol) + ')' : ''}${r.area ? ' · ' + esc(r.area) : ''}</span>
             ${r.recomienda === false ? '<span class="motivo-tag" style="background:#fee2e2;color:#991b1b">No recomendaría</span>' : ''}
             ${r.personal_nombre ? `<span>· ${esc(r.personal_nombre)}</span>` : ''}
             <span>· ${fecha}</span>
