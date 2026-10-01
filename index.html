@@ -659,7 +659,8 @@ function pintarPersonal(lista) {
 
 function elegirPersona(p) {
   estado.personal = p;
-  const nombre = p ? p.nombre.split(' ')[0] : null;
+  // Título + primer nombre: "Lic. Dagny Pérez" → "Lic. Dagny"
+  const nombre = p ? p.nombre.match(/^(?:\S+\.\s+)*\S+/)[0] : null;
   document.getElementById('titulo-calificacion').textContent =
     nombre ? `¿Cómo fue la atención de ${nombre}?` : '¿Cómo fue la atención que recibiste?';
   mostrar('paso-calificacion');
