@@ -177,6 +177,7 @@
             <option value="medico">Médico</option>
             <option value="obstetra">Obstetricia</option>
             <option value="laboratorio">Laboratorio</option>
+            <option value="terapia">Terapia física</option>
           </select>
         </label>
         <label>Área o especialidad (opcional — agrupa las fotos en la encuesta)
@@ -189,6 +190,7 @@
             <label><input type="checkbox" id="p-recepcion" checked> Recepción</label>
             <label><input type="checkbox" id="p-emergencia" checked> Emergencia</label>
             <label><input type="checkbox" id="p-laboratorio" disabled> Laboratorio</label>
+            <label><input type="checkbox" id="p-terapia" disabled> Terapia física</label>
           </div>
         </div>
         <label>Foto (opcional — se recorta cuadrada, centrada arriba)
@@ -210,6 +212,7 @@
         <button class="filtro" data-r="medico">Médico</button>
         <button class="filtro" data-r="obstetra">Obstetricia</button>
         <button class="filtro" data-r="laboratorio">Laboratorio</button>
+        <button class="filtro" data-r="terapia">Terapia física</button>
       </div>
       <p style="color:var(--gris);font-size:.88rem">Los cambios se ven en la encuesta al instante. Ocultar una pregunta no borra las respuestas pasadas.</p>
 
@@ -231,6 +234,7 @@
       <button class="filtro" data-f="enfermeria">Enfermería</button>
       <button class="filtro" data-f="obstetra">Obstetricia</button>
       <button class="filtro" data-f="laboratorio">Laboratorio</button>
+      <button class="filtro" data-f="terapia">Terapia física</button>
     </div>
 
     <div class="filtros-titulo">Período</div>
@@ -277,7 +281,7 @@ const SUPABASE_KEY = 'sb_publishable_SjOE5lvfh0fyyDRHQMc23w_ItvE2Yb4';
 
 // Lugar de trabajo de enfermería: se elige de esta lista, no se escribe
 const LUGARES_ENFERMERIA = ['Emergencia', 'Hospitalización', 'Centro Quirúrgico', 'Consultorio externo'];
-const ROL_NOMBRE = { recepcion: 'Admisión', enfermeria: 'Enfermería', medico: 'Médico', obstetra: 'Obstetricia', laboratorio: 'Laboratorio' };
+const ROL_NOMBRE = { recepcion: 'Admisión', enfermeria: 'Enfermería', medico: 'Médico', obstetra: 'Obstetricia', laboratorio: 'Laboratorio', terapia: 'Terapia física' };
 
 let todas = [];
 let personal = [];
@@ -396,23 +400,27 @@ function textoPregunta(tipo, clave) {
 // Claves de aspecto a mostrar: las de las preguntas (en su orden) más cualquiera que venga en respuestas viejas
 function clavesAspecto(rs) {
   const claves = [];
-  for (const q of preguntas) if (q.tipo === 'aspecto' && (!['enfermeria', 'obstetra', 'laboratorio'].includes(filtro) || q.rol === filtro) && !claves.includes(q.clave)) claves.push(q.clave);
+  for (const q of preguntas) if (q.tipo === 'aspecto' && (!['enfermeria', 'obstetra', 'laboratorio', 'terapia'].includes(filtro) || q.rol === filtro) && !claves.includes(q.clave)) claves.push(q.clave);
   for (const r of rs) for (const k of Object.keys(r.aspectos || {})) if (!claves.includes(k)) claves.push(k);
   return claves;
 }
 
 // ---- Gestión de personal ----
-const SERVICIO_NOMBRE = { recepcion: 'Recepción', emergencia: 'Emergencia', laboratorio: 'Laboratorio' };
+const SERVICIO_NOMBRE = { recepcion: 'Recepción', emergencia: 'Emergencia', laboratorio: 'Laboratorio', terapia: 'Terapia física' };
+// Secciones con personal propio: el cargo se llama igual que la sección
+const SECCIONES_PROPIAS = ['laboratorio', 'terapia'];
 
 // Recepción solo muestra Admisión en la encuesta: desmarca y bloquea para otros cargos
 document.getElementById('p-rol').addEventListener('change', e => {
-  // Laboratorio: su personal va solo en la sección Laboratorio
+  // Laboratorio y Terapia física: su personal va solo en su propia sección
   const rol = e.target.value;
-  const [rec, eme, lab] = ['recepcion', 'emergencia', 'laboratorio'].map(s => document.getElementById('p-' + s));
+  const rec = document.getElementById('p-recepcion'), eme = document.getElementById('p-emergencia');
+  const propia = SECCIONES_PROPIAS.includes(rol);
   rec.disabled = rol !== 'recepcion';
-  eme.disabled = lab.disabled = true;
-  if (rol === 'laboratorio') { rec.checked = eme.checked = false; lab.checked = true; }
-  else { eme.disabled = false; lab.checked = false; if (rec.disabled) rec.checked = false; }
+  eme.disabled = propia;
+  if (rec.disabled) rec.checked = false;
+  if (propia) eme.checked = false;
+  for (const s of SECCIONES_PROPIAS) document.getElementById('p-' + s).checked = s === rol;
 });
 
 // Recorte cuadrado centrado arriba (donde suele estar el rostro), máx 500px JPEG 80% (~40KB)
@@ -452,7 +460,7 @@ async function subirFoto(file) {
 async function crearPersona() {
   const nombre = document.getElementById('p-nombre').value.trim();
   const rol = document.getElementById('p-rol').value;
-  const servicios = ['recepcion', 'emergencia', 'laboratorio'].filter(s => document.getElementById('p-' + s).checked);
+  const servicios = ['recepcion', 'emergencia', ...SECCIONES_PROPIAS].filter(s => document.getElementById('p-' + s).checked);
   const archivo = document.getElementById('p-foto').files[0];
   if (!nombre) return alert('Escribe el nombre.');
   if (!servicios.length) return alert('Marca al menos una sección.');
@@ -598,7 +606,7 @@ const nombreMes = d => d.toLocaleDateString('es-PE', { month: 'long', year: 'num
 function filtradas() {
   const r0 = rangoActivo();
   return todas.filter(r => {
-    if (['recepcion', 'emergencia', 'laboratorio'].includes(filtro)) { if (r.servicio !== filtro) return false; }
+    if (['recepcion', 'emergencia', ...SECCIONES_PROPIAS].includes(filtro)) { if (r.servicio !== filtro) return false; }
     else if ((filtro === 'enfermeria' || filtro === 'obstetra') && r.rol !== filtro) return false;
     const t = new Date(r.creado_en).getTime();
     if (r0.desde !== null && t < r0.desde) return false;
@@ -607,7 +615,7 @@ function filtradas() {
   });
 }
 
-const AREA_TEXTO = { todos: 'Todas las áreas', recepcion: 'Recepción', emergencia: 'Emergencia', laboratorio: 'Laboratorio', enfermeria: 'Enfermería', obstetra: 'Obstetricia' };
+const AREA_TEXTO = { todos: 'Todas las áreas', recepcion: 'Recepción', emergencia: 'Emergencia', laboratorio: 'Laboratorio', terapia: 'Terapia física', enfermeria: 'Enfermería', obstetra: 'Obstetricia' };
 
 // Excel abre CSV con punto y coma; el BOM mantiene las tildes
 function descargarExcel() {
