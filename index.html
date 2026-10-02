@@ -4,274 +4,186 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Encuesta de Atención — Clínica Versalles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --azul: #2563eb;
     --azul-oscuro: #1e40af;
+    --marino: #0f2447;
+    --marino-claro: #1e3a6e;
+    --turquesa: #5eead4;
+    --lila: #c7d2fe;
     --verde: #10b981;
-    --fondo: #f5f7fa;
+    --panel: #f1f5f9;
     --texto: #0f2447;
     --gris: #54627a;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--fondo);
+    font-family: Figtree, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--marino);
     color: var(--texto);
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     align-items: center;
   }
-  header {
-    padding: 24px 16px 8px;
-    text-align: center;
-  }
-  header img { height: 52px; width: auto; }
-  main {
-    width: 100%;
-    max-width: 480px;
-    padding: 16px;
-    flex: 1;
-  }
+  button, textarea { font-family: inherit; }
+  /* Logo solo en el menú: sobre azul marino va dentro de una placa blanca */
+  header { padding: 20px 16px 0; text-align: center; display: none; }
+  body[data-paso="paso-servicio"] header { display: block; }
+  header img { height: 60px; width: auto; background: #fff; padding: 10px 20px; border-radius: 18px; }
+  main { width: 100%; max-width: 480px; flex: 1; display: flex; flex-direction: column; }
   .paso { display: none; animation: entrar .25s ease; }
-  .paso.activo { display: block; }
+  .paso.activo { display: flex; flex-direction: column; flex: 1; }
   @keyframes entrar { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-  h1 {
-    font-size: 1.35rem;
-    text-align: center;
-    margin: 16px 0 24px;
-    line-height: 1.35;
-  }
-  .sub { text-align: center; color: var(--gris); margin: -16px 0 24px; font-size: .95rem; }
 
-  .btn-servicio {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    width: 100%;
-    padding: 22px 20px;
-    margin-bottom: 14px;
-    border: 2px solid #dde4ec;
-    border-radius: 16px;
-    background: #fff;
-    font-size: 1.15rem;
-    font-weight: 600;
-    color: var(--texto);
-    cursor: pointer;
+  /* Cada pantalla: cabecera azul marino con la pregunta + hoja blanca con las opciones */
+  .cab { padding: 16px 20px 22px; display: flex; flex-direction: column; gap: 14px; color: #fff; }
+  .cab h1 { font-size: 1.7rem; font-weight: 800; line-height: 1.14; }
+  .cab .sub { color: var(--lila); font-size: 1rem; font-weight: 500; margin-top: -8px; }
+  .cab .sub:empty { display: none; }
+  .barra { display: flex; align-items: center; gap: 14px; }
+  .barra .prog { flex: 1; display: flex; gap: 6px; }
+  .barra .prog span { flex: 1; height: 6px; border-radius: 3px; background: #2a467c; }
+  .barra .prog span.on { background: var(--turquesa); }
+  .barra .n { font-size: .88rem; font-weight: 700; white-space: nowrap; }
+  .btn-volver {
+    width: 44px; height: 44px; flex: none; border: none; border-radius: 14px;
+    background: var(--marino-claro); color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
   }
-  .btn-servicio:active { border-color: var(--azul); background: #eff6ff; }
-  .btn-servicio .icono { font-size: 1.8rem; }
+  svg.ic { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .quien { display: flex; align-items: center; gap: 12px; }
+  .quien:empty { display: none; }
+  .quien img, .quien .avatar {
+    width: 72px; height: 72px; border-radius: 50%; object-fit: cover; object-position: center top;
+    border: 3px solid var(--turquesa); flex: none;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--marino-claro); color: var(--turquesa); font-size: 1.4rem; font-weight: 700;
+  }
+  .quien .nombre { font-size: 1.12rem; font-weight: 700; }
+  .quien .cargo { font-size: .88rem; color: var(--lila); }
+  .hoja { background: #fff; border-radius: 28px 28px 0 0; flex: 1; padding: 22px 20px 12px; display: flex; flex-direction: column; gap: 12px; }
 
   /* Menú de cargos: cuadrícula 2 columnas, un color por cargo */
-  .grid-cargos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .grid-cargos, .grid-areas, .grid-personal { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .btn-cargo {
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
-    min-height: 140px; padding: 20px 8px;
-    border: 2px solid #e2e8f0; border-radius: 16px; background: #fff;
-    font: inherit; font-size: 1rem; font-weight: 600; color: var(--texto); text-align: center; cursor: pointer;
+    min-height: 132px; padding: 18px 8px;
+    border: 2px solid transparent; border-radius: 18px; background: var(--panel);
+    font-size: 1rem; font-weight: 700; color: var(--texto); text-align: center; cursor: pointer;
   }
-  .btn-cargo:active { border-color: var(--azul); background: #eff6ff; }
+  .btn-cargo:active, .btn-area:active, .card-persona:active { border-color: var(--azul); background: #eff6ff; }
   .btn-cargo .icono { width: 60px; height: 60px; border-radius: 18px; display: flex; align-items: center; justify-content: center; }
   .btn-cargo svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-  .nota-cargos { text-align: center; color: var(--gris); font-size: .9rem; margin: 16px 0 0; }
 
-  .grid-personal {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
+  .btn-area {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 16px;
+    border: 2px solid transparent; border-radius: 18px; background: var(--panel);
+    color: var(--texto); text-align: left; cursor: pointer;
   }
+  /* Número impar de áreas: la última ocupa todo el ancho */
+  .btn-area:last-child:nth-child(odd) { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 14px; }
+  .btn-area .icono { width: 52px; height: 52px; border-radius: 50%; background: var(--marino); color: var(--turquesa); display: flex; align-items: center; justify-content: center; flex: none; }
+  .btn-area .icono svg { width: 26px; height: 26px; stroke-width: 1.8; }
+  .btn-area .nombre { font-size: 1.1rem; font-weight: 700; line-height: 1.2; display: block; }
+  .btn-area .cuantos { font-size: .88rem; color: var(--gris); display: block; margin-top: 2px; }
+
   .card-persona {
-    background: #fff;
-    border: 2px solid #dde4ec;
-    border-radius: 16px;
-    padding: 18px 10px 14px;
-    text-align: center;
-    cursor: pointer;
-  }
-  .card-persona:active { border-color: var(--azul); background: #eff6ff; }
-  .btn-volver {
-    background: none;
-    border: none;
-    color: var(--gris);
-    font-size: .95rem;
-    cursor: pointer;
-    padding: 8px 0;
-    display: block;
+    display: flex; flex-direction: column; padding: 0; overflow: hidden;
+    background: var(--panel); border: 2px solid transparent; border-radius: 18px;
+    color: var(--texto); text-align: center; cursor: pointer;
   }
   .card-persona img, .card-persona .avatar {
-    width: 84px;
-    height: 84px;
-    border-radius: 50%;
-    object-fit: cover;
-    object-position: center top;
-    margin: 0 auto 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #fff;
-    background: linear-gradient(135deg, var(--azul), var(--verde));
+    width: 100%; height: 124px; object-fit: cover; object-position: center top; display: flex;
+    align-items: center; justify-content: center;
+    font-size: 2rem; font-weight: 700; color: var(--turquesa); background: var(--marino-claro);
   }
-  .card-persona .nombre { font-weight: 600; font-size: .98rem; }
+  .card-persona .nombre { font-weight: 700; font-size: .95rem; padding: 9px 8px; line-height: 1.25; }
+  .card-nadie {
+    border: 2px dashed #cbd5e1; background: #fff; border-radius: 18px; padding: 14px; min-height: 64px;
+    color: var(--gris); font-size: .95rem; font-weight: 600; line-height: 1.3; cursor: pointer;
+  }
+  .card-nadie:nth-child(odd) { grid-column: 1 / -1; }
+
   .btn-secundario {
-    display: block;
-    width: 100%;
-    margin-top: 16px;
-    padding: 14px;
-    border: none;
-    border-radius: 12px;
-    background: none;
-    color: var(--gris);
-    font-size: 1rem;
-    text-decoration: underline;
-    cursor: pointer;
+    display: block; width: 100%; padding: 12px; border: none; border-radius: 12px; background: none;
+    color: var(--gris); font-size: 1rem; text-decoration: underline; cursor: pointer;
   }
 
-  .caritas {
-    display: flex;
-    justify-content: space-between;
-    gap: 6px;
-  }
+  /* Caritas: lista de mejor a peor (calificación general y cada aspecto) */
+  .caritas { display: flex; flex-direction: column; gap: 10px; }
   .carita {
-    flex: 1;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 6px 0;
-    border-radius: 12px;
+    display: flex; align-items: center; gap: 16px; padding: 10px 16px;
+    border: 2px solid transparent; border-radius: 18px; background: var(--panel);
+    font-size: 1.12rem; font-weight: 700; color: var(--texto); text-align: left; cursor: pointer;
   }
-  .carita .emoji { font-size: 2.4rem; display: block; filter: grayscale(35%); transition: transform .15s; }
-  .carita .etiqueta { font-size: .72rem; color: var(--gris); margin-top: 6px; display: block; }
-  .carita:active .emoji, .carita.sel .emoji { filter: none; transform: scale(1.25); }
+  .carita svg { width: 46px; height: 46px; flex: none; }
+  .carita.sel { border-color: var(--c); background: var(--bg); }
 
-  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
-    padding: 10px 16px;
-    border: 2px solid #dde4ec;
-    border-radius: 999px;
-    background: #fff;
-    font-size: .92rem;
-    color: var(--texto);
-    cursor: pointer;
+    padding: 10px 14px; min-height: 44px; border: none; border-radius: 999px; background: var(--panel);
+    font-size: .9rem; font-weight: 600; color: var(--texto); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   }
-  .chip.sel { border-color: var(--azul); background: #dbeafe; font-weight: 600; }
+  .chip.sel { background: var(--marino); color: #fff; }
 
+  .etiqueta-campo { font-size: .9rem; font-weight: 700; display: block; margin-bottom: 6px; }
   textarea {
-    width: 100%;
-    min-height: 96px;
-    padding: 14px;
-    border: 2px solid #dde4ec;
-    border-radius: 12px;
-    font-size: 1rem;
-    font-family: inherit;
-    resize: vertical;
-    background: #fff;
+    width: 100%; min-height: 84px; padding: 12px; border: 2px solid transparent; border-radius: 16px;
+    font-size: 1rem; resize: vertical; background: var(--panel); color: var(--texto);
   }
   textarea:focus { outline: none; border-color: var(--azul); }
-
-  .aspecto {
-    background: #fff;
-    border: 2px solid #dde4ec;
-    border-radius: 14px;
-    padding: 14px 16px;
-    margin-bottom: 14px;
-  }
-  .aspecto-nombre { font-weight: 600; margin-bottom: 10px; }
-  .aspecto-caritas { display: flex; justify-content: space-between; }
-  .aspecto-caritas button {
-    background: none;
-    border: none;
-    font-size: 1.7rem;
-    padding: 4px 8px;
-    cursor: pointer;
-    filter: grayscale(60%);
-    border-radius: 10px;
-  }
-  .aspecto-caritas button.sel { filter: none; transform: scale(1.2); background: #dbeafe; }
-  .recomienda { margin-top: 16px; }
+  .aspecto-nombre { font-weight: 700; font-size: .98rem; line-height: 1.3; margin-bottom: 8px; }
   .recomienda-botones { display: flex; gap: 10px; }
-  .recomienda-botones .chip { flex: 1; text-align: center; padding: 12px; font-size: 1rem; }
+  .recomienda-botones .chip { flex: 1; border-radius: 16px; min-height: 48px; font-size: 1rem; }
   .btn-adjunto {
-    display: block;
-    width: 100%;
-    margin-top: 12px;
-    padding: 13px;
-    border: 2px dashed #94a1b5;
-    border-radius: 12px;
-    background: #fff;
-    color: var(--gris);
-    font-size: .95rem;
-    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px;
+    border: 2px dashed #94a1b5; border-radius: 14px; background: #fff;
+    color: var(--gris); font-size: .95rem; font-weight: 600; cursor: pointer;
   }
-  .adjuntos-lista { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+  .adjuntos-lista { display: flex; gap: 10px; flex-wrap: wrap; }
+  .adjuntos-lista:empty { display: none; }
   .adjuntos-lista .mini {
-    position: relative;
-    width: 72px;
-    height: 72px;
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1px solid #dde4ec;
-    background: #eef2f7;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.6rem;
+    position: relative; width: 72px; height: 72px; border-radius: 10px; overflow: hidden;
+    border: 1px solid #dde4ec; background: #eef2f7;
+    display: flex; align-items: center; justify-content: center; font-size: 1.6rem;
   }
   .adjuntos-lista .mini img { width: 100%; height: 100%; object-fit: cover; }
   .adjuntos-lista .mini .quitar {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    width: 20px;
-    height: 20px;
-    border: none;
-    border-radius: 50%;
-    background: rgba(0,0,0,.55);
-    color: #fff;
-    font-size: .7rem;
-    line-height: 20px;
-    cursor: pointer;
+    position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; border: none; border-radius: 50%;
+    background: rgba(0,0,0,.55); color: #fff; font-size: .7rem; line-height: 20px; cursor: pointer;
   }
   .btn-principal {
-    display: block;
-    width: 100%;
-    margin-top: 20px;
-    padding: 16px;
-    border: none;
-    border-radius: 14px;
-    background: var(--azul);
-    color: #fff;
-    font-size: 1.1rem;
-    font-weight: 700;
-    cursor: pointer;
+    display: block; width: 100%; margin-top: 4px; padding: 16px; border: none; border-radius: 16px;
+    background: var(--azul); color: #fff; font-size: 1.1rem; font-weight: 700; cursor: pointer;
   }
   .btn-principal:disabled { opacity: .5; }
   .btn-principal:active { background: var(--azul-oscuro); }
 
-  .gracias { text-align: center; padding-top: 40px; }
-  .gracias .check {
-    width: 88px;
-    height: 88px;
-    border-radius: 50%;
-    background: var(--verde);
-    color: #fff;
-    font-size: 2.6rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 24px;
-  }
+  /* Gracias: pantalla completa azul marino */
+  .gracias { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 28px 24px; color: #fff; text-align: center; }
+  .gracias .check { width: 112px; height: 112px; border-radius: 50%; background: var(--turquesa); color: var(--marino); display: flex; align-items: center; justify-content: center; }
+  .gracias .check svg { width: 64px; height: 64px; stroke-width: 2.6; }
+  .gracias h1 { font-size: 2rem; font-weight: 800; line-height: 1.12; }
+  .gracias p { color: var(--lila); font-size: 1.05rem; }
+  .resumen { align-self: stretch; background: var(--marino-claro); border-radius: 20px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; text-align: left; }
+  .resumen:empty { display: none; }
+  .resumen img.foto { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; object-position: center top; flex: none; }
+  .resumen .txt { flex: 1; }
+  .resumen .nombre { font-weight: 700; display: block; }
+  .resumen .nota { font-size: .88rem; color: var(--lila); display: block; }
+  .resumen svg { width: 40px; height: 40px; flex: none; }
+  .btn-otra { border: none; background: #fff; color: var(--marino); border-radius: 16px; font-size: 1rem; font-weight: 700; padding: 15px 24px; cursor: pointer; }
+
   .error-msg {
-    display: none;
-    text-align: center;
-    color: #b91c1c;
-    background: #fef2f2;
-    border-radius: 10px;
-    padding: 12px;
-    margin-top: 14px;
-    font-size: .92rem;
+    display: none; text-align: center; color: #b91c1c; background: #fef2f2;
+    border-radius: 10px; padding: 12px; font-size: .92rem;
   }
 
   /* Intro de 4 s: familias caminan y entran a la clínica; luego el logo original */
@@ -322,7 +234,8 @@
   @keyframes frase-final { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
   @keyframes intro-salir { to { opacity: 0; visibility: hidden; } }
   @media (prefers-reduced-motion: reduce) { #intro { display: none; } }
-  footer { padding: 16px; color: var(--gris); font-size: .78rem; text-align: center; }
+  footer { width: 100%; max-width: 480px; padding: 12px 16px 16px; background: #fff; color: var(--gris); font-size: .78rem; text-align: center; }
+  body[data-paso="paso-gracias"] footer { background: none; color: var(--lila); }
 </style>
 </head>
 <body>
@@ -423,9 +336,13 @@
 <header><img src="https://cvijxlgdshfwqszbqgkr.supabase.co/storage/v1/object/public/encuesta-fotos/logo-versalles.png" alt="Clínica Versalles"></header>
 <main>
 
-  <!-- Paso 1: servicio -->
+  <!-- Paso 1: cargo -->
   <section class="paso" id="paso-servicio">
-    <h1>¿A quién quieres calificar hoy?</h1>
+    <div class="cab">
+      <h1>¿A quién quieres calificar hoy?</h1>
+      <p class="sub">Toca el cargo de la persona que te atendió</p>
+    </div>
+    <div class="hoja">
     <div class="grid-cargos">
       <button class="btn-cargo" onclick="elegirCargo('recepcion')"><span class="icono" style="background:#dbeafe;color:#1e40af"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M15 9h3M15 13h3M6 16.5c.6-1.4 1.7-2 3-2s2.4.6 3 2"/></svg></span>Admisión</button>
       <button class="btn-cargo" onclick="elegirCargo('enfermeria')"><span class="icono" style="background:#ccfbf1;color:#0f766e"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3l4 4M19 5L8 16l-3 1 1-3L17 3M13 7l2 2M10 10l2 2M5.5 18.5L3 21"/></svg></span>Enfermería</button>
@@ -434,95 +351,132 @@
       <button class="btn-cargo" onclick="elegirCargo('laboratorio')"><span class="icono" style="background:#dcfce7;color:#166534"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8M9.5 3v5L4.6 17.2A2.5 2.5 0 0 0 6.8 21h10.4a2.5 2.5 0 0 0 2.2-3.8L14.5 8V3"/><path d="M7 14h10"/></svg></span>Laboratorio</button>
       <button class="btn-cargo" onclick="elegirCargo('terapia')"><span class="icono" style="background:#ffedd5;color:#9a3412"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="15" cy="4" r="2"/><path d="M4 20l5-3.5 2-5 4 3h4M11 11.5L8.5 8 4 9"/></svg></span>Terapia física</button>
     </div>
-    <p class="nota-cargos">Toca el cargo de la persona que te atendió</p>
+    </div>
   </section>
 
   <!-- Paso 1c: área dentro del cargo (Admisión, Seguros, Pediatría…) -->
-  <section class="paso" id="paso-area">
-    <button class="btn-volver" onclick="volver()">← Volver</button>
-    <h1>¿En qué área te atendieron?</h1>
-    <div id="botones-area"></div>
+  <section class="paso" id="paso-area" data-n="1">
+    <div class="cab">
+      <div class="barra"></div>
+      <h1>¿En qué área te atendieron?</h1>
+      <p class="sub" id="sub-area"></p>
+    </div>
+    <div class="hoja"><div class="grid-areas" id="botones-area"></div></div>
   </section>
 
   <!-- Paso 2: persona -->
-  <section class="paso" id="paso-persona">
-    <button class="btn-volver" onclick="volver()">← Volver</button>
-    <h1>¿Quién te atendió?</h1>
-    <p class="sub">Toca la foto de la persona</p>
-    <div class="error-msg" id="error-personal">No se pudo cargar la lista.
-      <button class="btn-secundario" style="margin-top:6px" onclick="elegirRol(estado.rol)">Reintentar</button>
+  <section class="paso" id="paso-persona" data-n="2">
+    <div class="cab">
+      <div class="barra"></div>
+      <h1>¿Quién te atendió?</h1>
+      <p class="sub" id="sub-persona"></p>
     </div>
-    <div class="grid-personal" id="grid-personal"></div>
-    <button class="btn-secundario" onclick="elegirPersona(null)">No recuerdo / prefiero no decir</button>
+    <div class="hoja">
+      <div class="error-msg" id="error-personal">No se pudo cargar la lista.
+        <button class="btn-secundario" style="margin-top:6px" onclick="elegirRol(estado.rol)">Reintentar</button>
+      </div>
+      <div class="grid-personal" id="grid-personal"></div>
+    </div>
   </section>
 
   <!-- Paso 3: calificación -->
-  <section class="paso" id="paso-calificacion">
-    <button class="btn-volver" onclick="volver()">← Volver</button>
-    <h1 id="titulo-calificacion">¿Cómo fue la atención?</h1>
-    <div class="caritas" id="caritas"></div>
+  <section class="paso" id="paso-calificacion" data-n="3">
+    <div class="cab">
+      <div class="barra"></div>
+      <div class="quien"></div>
+      <h1 id="titulo-calificacion">¿Cómo fue la atención?</h1>
+    </div>
+    <div class="hoja"><div class="caritas" id="caritas"></div></div>
   </section>
 
-  <!-- Paso 3b: aspectos -->
-  <section class="paso" id="paso-aspectos">
-    <button class="btn-volver" onclick="volver()">← Volver</button>
-    <h1>Cuéntanos un poco más</h1>
-    <div id="aspectos"></div>
-    <button class="btn-principal" onclick="irADetalle()">Continuar</button>
-    <button class="btn-secundario" onclick="irADetalle()">Omitir</button>
+  <!-- Paso 3b: aspectos, una pregunta a la vez -->
+  <section class="paso" id="paso-aspectos" data-n="4">
+    <div class="cab">
+      <div class="barra"></div>
+      <h1 id="titulo-aspecto"></h1>
+      <p class="sub" id="sub-aspecto"></p>
+    </div>
+    <div class="hoja">
+      <div class="caritas" id="caritas-aspecto"></div>
+      <button class="btn-secundario" onclick="siguienteAspecto()">Omitir esta pregunta</button>
+    </div>
   </section>
 
   <!-- Paso 4: detalle -->
-  <section class="paso" id="paso-detalle">
-    <button class="btn-volver" onclick="volver()">← Volver</button>
-    <h1 id="titulo-detalle">¿Qué podemos mejorar?</h1>
-    <div class="chips" id="chips" style="display:none">
+  <section class="paso" id="paso-detalle" data-n="5">
+    <div class="cab">
+      <div class="barra"></div>
+      <h1 id="titulo-detalle">¿Qué podemos mejorar?</h1>
+      <p class="sub">Último paso</p>
     </div>
-    <textarea id="comentario" maxlength="1000" placeholder="Cuéntanos más (opcional)"></textarea>
-    <div class="recomienda">
-      <div class="aspecto-nombre">¿Recomendarías la Clínica Versalles a un familiar o amigo?</div>
-      <div class="recomienda-botones">
-        <button class="chip" data-rec="si" onclick="elegirRecomienda(true, this)">👍 Sí</button>
-        <button class="chip" data-rec="no" onclick="elegirRecomienda(false, this)">👎 No</button>
+    <div class="hoja">
+      <div class="chips" id="chips" style="display:none"></div>
+      <label><span class="etiqueta-campo">Comentario (opcional)</span>
+        <textarea id="comentario" maxlength="1000" placeholder="Cuéntanos más"></textarea>
+      </label>
+      <div class="recomienda">
+        <div class="aspecto-nombre">¿Recomendarías la Clínica Versalles a un familiar o amigo?</div>
+        <div class="recomienda-botones">
+          <button class="chip" data-rec="si" onclick="elegirRecomienda(true, this)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11v8H4v-8zM7 11l4-8a2 2 0 0 1 2 2v4h5a2 2 0 0 1 2 2.3l-1 6A2 2 0 0 1 17 19H7"/></svg>Sí</button>
+          <button class="chip" data-rec="no" onclick="elegirRecomienda(false, this)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 13V5H4v8zM7 13l4 8a2 2 0 0 0 2-2v-4h5a2 2 0 0 0 2-2.3l-1-6A2 2 0 0 0 17 5H7"/></svg>No</button>
+        </div>
       </div>
+      <input type="file" id="archivo" accept="image/*,video/*" multiple hidden>
+      <button class="btn-adjunto" onclick="document.getElementById('archivo').click()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Agregar foto o video (opcional)</button>
+      <div class="adjuntos-lista" id="adjuntos-lista"></div>
+      <button class="btn-principal" id="btn-enviar" onclick="enviar()">Enviar opinión</button>
+      <div class="error-msg" id="error-envio">No se pudo enviar. Revisa tu conexión e intenta de nuevo.</div>
     </div>
-    <input type="file" id="archivo" accept="image/*,video/*" multiple hidden>
-    <button class="btn-adjunto" onclick="document.getElementById('archivo').click()">📷 Agregar foto o video (opcional)</button>
-    <div class="adjuntos-lista" id="adjuntos-lista"></div>
-    <button class="btn-principal" id="btn-enviar" onclick="enviar()">Enviar</button>
-    <div class="error-msg" id="error-envio">No se pudo enviar. Revisa tu conexión e intenta de nuevo.</div>
   </section>
 
   <!-- Paso 5: gracias -->
   <section class="paso" id="paso-gracias">
     <div class="gracias">
-      <div class="check">✓</div>
+      <div class="check"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
       <h1>¡Gracias por tu opinión!</h1>
-      <p class="sub">Nos ayuda a atenderte mejor cada día.</p>
-      <button class="btn-secundario" id="btn-otra" style="display:none" onclick="otraEncuesta()">Responder otra encuesta</button>
+      <p>Nos ayuda a atenderte mejor cada día.</p>
+      <div class="resumen" id="resumen"></div>
+      <button class="btn-otra" onclick="otraEncuesta()">Calificar a otra persona</button>
     </div>
   </section>
 
 </main>
-<footer>Clínica Versalles · Encuesta anónima de satisfacción · v13</footer>
+<footer>Clínica Versalles · Encuesta anónima de satisfacción · v14</footer>
 
 <script>
 const SUPABASE_URL = 'https://cvijxlgdshfwqszbqgkr.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_SjOE5lvfh0fyyDRHQMc23w_ItvE2Yb4';
 
+// Caritas dibujadas (se ven igual en todos los celulares), de mejor a peor
 const CARITAS = [
-  { valor: 1, emoji: '😡', etiqueta: 'Muy mala' },
-  { valor: 2, emoji: '😕', etiqueta: 'Mala' },
-  { valor: 3, emoji: '😐', etiqueta: 'Regular' },
-  { valor: 4, emoji: '🙂', etiqueta: 'Buena' },
-  { valor: 5, emoji: '😍', etiqueta: 'Excelente' },
+  { valor: 5, etiqueta: 'Excelente', bg: '#dcfce7', c: '#15803d', boca: '<path d="M15 27c2 8 16 8 18 0z"/>' },
+  { valor: 4, etiqueta: 'Buena', bg: '#ecfccb', c: '#4d7c0f', boca: '<path d="M17 29c3 4 11 4 14 0"/>' },
+  { valor: 3, etiqueta: 'Regular', bg: '#fef3c7', c: '#a16207', boca: '<path d="M17 32h14"/>' },
+  { valor: 2, etiqueta: 'Mala', bg: '#ffedd5', c: '#c2410c', boca: '<path d="M17 33c3-3 11-3 14 0"/>' },
+  { valor: 1, etiqueta: 'Muy mala', bg: '#fee2e2', c: '#b91c1c', boca: '<path d="M14 17l6 2.5M34 17l-6 2.5"/><path d="M16 34c2-5 14-5 16 0"/>' },
 ];
+const caraSvg = c => `<svg viewBox="0 0 48 48" fill="none" stroke="${c.c}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="21" fill="${c.bg}"/><circle cx="18" cy="21.5" r="1.6" fill="${c.c}"/><circle cx="30" cy="21.5" r="1.6" fill="${c.c}"/>${c.boca}</svg>`;
+const botonesCaritas = () => CARITAS.map(c =>
+  `<button class="carita" data-v="${c.valor}" style="--c:${c.c};--bg:${c.bg}">${caraSvg(c)}${c.etiqueta}</button>`).join('');
+const esc = t => String(t).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+const ROL_NOMBRE = { recepcion: 'Admisión', enfermeria: 'Enfermería', medico: 'Médico', obstetra: 'Obstetricia', laboratorio: 'Laboratorio', terapia: 'Terapia física' };
+const IC = d => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+// Íconos de las áreas conocidas; el resto usa el genérico
+const ICONO_AREA = {
+  'emergencia': '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
+  'hospitalizacion': '<path d="M3 18V7M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5"/><circle cx="7" cy="11" r="1.5"/>',
+  'centro quirurgico': '<circle cx="6" cy="7" r="2.5"/><circle cx="6" cy="17" r="2.5"/><path d="M8 8.5L20 17M8 15.5L20 7"/>',
+};
+const ICONO_AREA_GENERICO = '<path d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.800 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/>';
+const sinTildes = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
 const estado = {
   servicio: null, rol: null, area: null, personal: null, calificacion: null, motivos: [],
   aspectos: {}, recomienda: null,
 };
 let personalCache = [];
+let aspectosQ = [];  // preguntas de caritas del cargo; se muestran de una en una
+let aspIdx = 0;
 
 let historial = [];
 
@@ -531,15 +485,29 @@ function mostrar(id, esVolver = false) {
   if (!esVolver && actual && actual.id !== id) historial.push(actual.id);
   document.querySelectorAll('.paso').forEach(p => p.classList.remove('activo'));
   document.getElementById(id).classList.add('activo');
+  document.body.dataset.paso = id;
   const bv = document.querySelector(`#${id} .btn-volver`);
-  if (bv) bv.style.display = historial.length ? 'block' : 'none';
+  if (bv) bv.style.visibility = historial.length ? 'visible' : 'hidden';
   window.scrollTo(0, 0);
 }
 
 function volver() {
+  // Dentro de los aspectos, Volver regresa a la pregunta anterior
+  if (document.body.dataset.paso === 'paso-aspectos' && aspIdx > 0) { aspIdx--; pintarAspecto(); return; }
   const prev = historial.pop();
   if (prev) mostrar(prev, true);
 }
+
+// Barra superior de cada pantalla: Volver + avance "Paso n de 5"
+document.querySelectorAll('.paso[data-n]').forEach(sec => {
+  const n = Number(sec.dataset.n);
+  sec.querySelector('.barra').innerHTML =
+    `<button class="btn-volver" onclick="volver()" aria-label="Volver">${IC('<path d="M15 6l-6 6 6 6"/>')}</button>` +
+    `<div class="prog">${[1, 2, 3, 4, 5].map(i => `<span${i <= n ? ' class="on"' : ''}></span>`).join('')}</div>` +
+    `<span class="n">Paso ${n} de 5</span>`;
+});
+
+const cargoYArea = () => [ROL_NOMBRE[estado.rol], estado.area || estado.personal?.area].filter(Boolean).join(' · ');
 
 function yaRespondio() {
   try {
@@ -578,23 +546,8 @@ function cargarPreguntas(rol) {
 function pintarPreguntas(preguntas) {
   estado.aspectos = {};
   estado.motivos = [];
-  const aspectos = document.getElementById('aspectos');
-  aspectos.innerHTML = '';
-  for (const q of preguntas.filter(q => q.tipo === 'aspecto')) {
-    const div = document.createElement('div');
-    div.className = 'aspecto';
-    div.innerHTML = `<div class="aspecto-nombre"></div><div class="aspecto-caritas">${CARITAS.map(c => `<button data-v="${c.valor}">${c.emoji}</button>`).join('')}</div>`;
-    div.querySelector('.aspecto-nombre').textContent = q.texto;
-    const cont = div.querySelector('.aspecto-caritas');
-    cont.addEventListener('click', e => {
-      const b = e.target.closest('button');
-      if (!b) return;
-      estado.aspectos[q.clave] = Number(b.dataset.v);
-      cont.querySelectorAll('button').forEach(x => x.classList.remove('sel'));
-      b.classList.add('sel');
-    });
-    aspectos.appendChild(div);
-  }
+  aspectosQ = preguntas.filter(q => q.tipo === 'aspecto');
+  aspIdx = 0;
   const chips = document.getElementById('chips');
   chips.innerHTML = '';
   for (const q of preguntas.filter(q => q.tipo === 'motivo')) {
@@ -630,12 +583,15 @@ async function elegirRol(rol) {
     const cont = document.getElementById('botones-area');
     cont.innerHTML = '';
     for (const a of areas) {
+      const n = personalCache.filter(p => (p.area || 'Otros') === a).length;
       const b = document.createElement('button');
-      b.className = 'btn-servicio';
-      b.textContent = a;
+      b.className = 'btn-area';
+      b.innerHTML = `<span class="icono">${IC(ICONO_AREA[sinTildes(a)] || ICONO_AREA_GENERICO)}</span>` +
+        `<span><span class="nombre">${esc(a)}</span><span class="cuantos">${n} ${n === 1 ? 'persona' : 'personas'}</span></span>`;
       b.onclick = () => elegirArea(a);
       cont.appendChild(b);
     }
+    document.getElementById('sub-area').textContent = ROL_NOMBRE[rol] || '';
     mostrar('paso-area');
     return;
   }
@@ -663,30 +619,77 @@ function pintarPersonal(lista) {
     card.querySelector('.nombre').textContent = p.nombre;
     grid.appendChild(card);
   }
+  const nadie = document.createElement('button');
+  nadie.className = 'card-nadie';
+  nadie.textContent = 'No recuerdo o prefiero no decir';
+  nadie.onclick = () => elegirPersona(null);
+  grid.appendChild(nadie);
+  document.getElementById('sub-persona').textContent = cargoYArea();
   mostrar('paso-persona');
 }
 
 function elegirPersona(p) {
   estado.personal = p;
-  // Título + primer nombre: "Lic. Dagny Pérez" → "Lic. Dagny"
-  const nombre = p ? p.nombre.match(/^(?:\S+\.\s+)*\S+/)[0] : null;
+  // Cabecera con foto y nombre de la persona elegida (vacía si no eligió a nadie)
+  const iniciales = p ? p.nombre.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() : '';
+  document.querySelector('#paso-calificacion .quien').innerHTML = p
+    ? (p.foto_url ? `<img src="${esc(p.foto_url)}" alt="">` : `<div class="avatar">${esc(iniciales)}</div>`) +
+      `<div><div class="nombre">${esc(p.nombre)}</div><div class="cargo">${esc(cargoYArea())}</div></div>`
+    : '';
   document.getElementById('titulo-calificacion').textContent =
-    nombre ? `¿Cómo fue la atención de ${nombre}?` : '¿Cómo fue la atención que recibiste?';
+    p ? '¿Cómo fue su atención?' : '¿Cómo fue la atención que recibiste?';
+  document.querySelectorAll('#caritas .carita').forEach(c => c.classList.remove('sel'));
   mostrar('paso-calificacion');
 }
 
+// Título + primer nombre: "Lic. Dagny Pérez" → "Lic. Dagny"
+const nombreCorto = p => p.nombre.match(/^(?:\S+\.\s+)*\S+/)[0];
+
+function pintarAspecto() {
+  const q = aspectosQ[aspIdx];
+  document.getElementById('titulo-aspecto').textContent = q.texto;
+  document.getElementById('sub-aspecto').textContent =
+    `Pregunta ${aspIdx + 1} de ${aspectosQ.length}` + (estado.personal ? ` sobre ${nombreCorto(estado.personal)}` : '');
+  const cont = document.getElementById('caritas-aspecto');
+  cont.innerHTML = botonesCaritas();
+  const previa = estado.aspectos[q.clave];
+  if (previa) cont.querySelector(`[data-v="${previa}"]`).classList.add('sel');
+}
+
+let tAspecto;  // avance automático tras tocar una carita; se cancela si avanza antes por Omitir
+function siguienteAspecto() {
+  clearTimeout(tAspecto);
+  if (aspIdx < aspectosQ.length - 1) { aspIdx++; pintarAspecto(); window.scrollTo(0, 0); }
+  else irADetalle();
+}
+
+document.getElementById('caritas-aspecto').addEventListener('click', e => {
+  const b = e.target.closest('.carita');
+  if (!b) return;
+  estado.aspectos[aspectosQ[aspIdx].clave] = Number(b.dataset.v);
+  b.parentElement.querySelectorAll('.carita').forEach(x => x.classList.remove('sel'));
+  b.classList.add('sel');
+  clearTimeout(tAspecto);
+  tAspecto = setTimeout(siguienteAspecto, 250);
+});
+
 function elegirCalificacion(valor, boton) {
   estado.calificacion = valor;
-  document.querySelectorAll('.carita').forEach(c => c.classList.remove('sel'));
+  document.querySelectorAll('#caritas .carita').forEach(c => c.classList.remove('sel'));
   boton.classList.add('sel');
   const negativa = valor <= 3;
   document.getElementById('chips').style.display = negativa ? 'flex' : 'none';
   document.getElementById('titulo-detalle').textContent =
     negativa ? '¿Qué podemos mejorar?' : '¿Algo más que quieras contarnos?';
   document.getElementById('comentario').placeholder =
-    negativa ? 'Cuéntanos qué pasó (opcional)' : 'Sugerencias o felicitaciones (opcional)';
+    negativa ? 'Cuéntanos qué pasó' : 'Sugerencias o felicitaciones';
   // Si el cargo no tiene aspectos activos, se salta ese paso
-  setTimeout(() => mostrar(document.getElementById('aspectos').children.length ? 'paso-aspectos' : 'paso-detalle'), 250);
+  setTimeout(() => {
+    if (!aspectosQ.length) return mostrar('paso-detalle');
+    aspIdx = 0;
+    pintarAspecto();
+    mostrar('paso-aspectos');
+  }, 250);
 }
 
 function irADetalle() { mostrar('paso-detalle'); }
@@ -697,10 +700,11 @@ function elegirRecomienda(valor, boton) {
   boton.classList.add('sel');
 }
 
-document.getElementById('caritas').innerHTML = CARITAS.map(c =>
-  `<button class="carita" onclick="elegirCalificacion(${c.valor}, this)">
-     <span class="emoji">${c.emoji}</span><span class="etiqueta">${c.etiqueta}</span>
-   </button>`).join('');
+document.getElementById('caritas').innerHTML = botonesCaritas();
+document.getElementById('caritas').addEventListener('click', e => {
+  const b = e.target.closest('.carita');
+  if (b) elegirCalificacion(Number(b.dataset.v), b);
+});
 
 document.getElementById('chips').addEventListener('click', e => {
   const chip = e.target.closest('.chip');
@@ -776,7 +780,7 @@ async function subirAdjuntos() {
 async function enviar() {
   const btn = document.getElementById('btn-enviar');
   btn.disabled = true;
-  btn.textContent = adjuntos.length ? 'Enviando…' : 'Enviar';
+  btn.textContent = adjuntos.length ? 'Enviando…' : 'Enviar opinión';
   document.getElementById('error-envio').style.display = 'none';
   try {
     const urlsAdjuntos = await subirAdjuntos();
@@ -803,11 +807,18 @@ async function enviar() {
     });
     if (!res.ok) throw new Error(await res.text());
     try { localStorage.setItem('encuesta_enviada', String(Date.now())); } catch {}
+    // Resumen de lo que calificó
+    const c = CARITAS.find(x => x.valor === estado.calificacion);
+    const p = estado.personal;
+    document.getElementById('resumen').innerHTML =
+      (p?.foto_url ? `<img class="foto" src="${esc(p.foto_url)}" alt="">` : '') +
+      `<span class="txt"><span class="nombre">${esc(p ? p.nombre : ROL_NOMBRE[estado.rol] || 'Tu atención')}</span>` +
+      `<span class="nota">Tu calificación: ${c.etiqueta}</span></span>${caraSvg(c)}`;
     mostrar('paso-gracias');
   } catch (err) {
     document.getElementById('error-envio').style.display = 'block';
     btn.disabled = false;
-    btn.textContent = 'Enviar';
+    btn.textContent = 'Enviar opinión';
   }
 }
 
@@ -827,7 +838,6 @@ function otraEncuesta() {
   // Si ya respondió hace poco, mostrar gracias con opción de responder otra
   if (!params.has('test') && yaRespondio()) {
     quitarIntro();
-    document.getElementById('btn-otra').style.display = 'block';
     mostrar('paso-gracias');
     return;
   }
