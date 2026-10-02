@@ -412,21 +412,13 @@
 
   <!-- Paso 1: servicio -->
   <section class="paso" id="paso-servicio">
-    <h1>¿Dónde te atendieron hoy?</h1>
-    <button class="btn-servicio" onclick="elegirServicio('recepcion')"><span class="icono">🏥</span> Recepción / Admisión</button>
-    <button class="btn-servicio" onclick="elegirServicio('emergencia')"><span class="icono">🚑</span> Emergencia</button>
-    <button class="btn-servicio" onclick="elegirServicio('laboratorio')"><span class="icono">🧪</span> Laboratorio</button>
-    <button class="btn-servicio" onclick="elegirServicio('terapia')"><span class="icono">🦵</span> Terapia física</button>
-  </section>
-
-  <!-- Paso 1b: rol (solo emergencia) -->
-  <section class="paso" id="paso-rol">
-    <button class="btn-volver" onclick="volver()">← Volver</button>
-    <h1>¿A quién quieres calificar?</h1>
-    <button class="btn-servicio" data-rol="recepcion" onclick="elegirRol('recepcion')"><span class="icono">🪪</span> Admisión / Recepción</button>
-    <button class="btn-servicio" data-rol="enfermeria" onclick="elegirRol('enfermeria')"><span class="icono">💉</span> Enfermería</button>
-    <button class="btn-servicio" data-rol="medico" onclick="elegirRol('medico')"><span class="icono">🩺</span> Médico</button>
-    <button class="btn-servicio" data-rol="obstetra" onclick="elegirRol('obstetra')"><span class="icono">🤰</span> Obstetricia</button>
+    <h1>¿Quién te atendió hoy?</h1>
+    <button class="btn-servicio" onclick="elegirCargo('recepcion')"><span class="icono">🪪</span> Admisión / Recepción</button>
+    <button class="btn-servicio" onclick="elegirCargo('enfermeria')"><span class="icono">💉</span> Enfermería</button>
+    <button class="btn-servicio" onclick="elegirCargo('medico')"><span class="icono">🩺</span> Médico</button>
+    <button class="btn-servicio" onclick="elegirCargo('obstetra')"><span class="icono">🤰</span> Obstetricia</button>
+    <button class="btn-servicio" onclick="elegirCargo('laboratorio')"><span class="icono">🧪</span> Laboratorio</button>
+    <button class="btn-servicio" onclick="elegirCargo('terapia')"><span class="icono">🦵</span> Terapia física</button>
   </section>
 
   <!-- Paso 1c: área dentro del cargo (Admisión, Seguros, Pediatría…) -->
@@ -540,12 +532,11 @@ function yaRespondio() {
   } catch { return false; }
 }
 
-// Emergencia siempre ofrece los 4 cargos; si un cargo no tiene fotos, se califica en general
-function elegirServicio(servicio) {
-  estado.servicio = servicio;
-  // Laboratorio y Terapia física: su cargo se llama igual que la sección
-  if (servicio !== 'emergencia') { elegirRol(['laboratorio', 'terapia'].includes(servicio) ? servicio : 'recepcion'); return; }
-  mostrar('paso-rol');
+// Sección donde vive cada cargo en la base (Admisión está en Recepción y Emergencia: se usa Recepción)
+const SERVICIO_DE_ROL = { recepcion: 'recepcion', enfermeria: 'emergencia', medico: 'emergencia', obstetra: 'emergencia', laboratorio: 'laboratorio', terapia: 'terapia' };
+function elegirCargo(rol) {
+  estado.servicio = SERVICIO_DE_ROL[rol];
+  elegirRol(rol);
 }
 
 async function consultar(url) {
@@ -804,7 +795,7 @@ async function enviar() {
   }
 }
 
-// Arranque: QR puede traer ?s=recepcion o ?s=emergencia para saltar el paso 1
+// Arranque: QR puede traer ?s=<cargo> (recepcion, laboratorio…) para saltar el menú
 function otraEncuesta() {
   try { localStorage.removeItem('encuesta_enviada'); } catch {}
   location.reload();
@@ -825,7 +816,8 @@ function otraEncuesta() {
     return;
   }
   const s = params.get('s');
-  if (['recepcion', 'emergencia', 'laboratorio', 'terapia'].includes(s)) { elegirServicio(s); }
+  // QR viejo de Emergencia abre el menú; el de Recepción va directo a Admisión
+  if (SERVICIO_DE_ROL[s]) { elegirCargo(s); }
   else { mostrar('paso-servicio'); }
 })();
 </script>
