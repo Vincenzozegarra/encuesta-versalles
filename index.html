@@ -63,6 +63,19 @@
   .btn-servicio:active { border-color: var(--azul); background: #eff6ff; }
   .btn-servicio .icono { font-size: 1.8rem; }
 
+  /* Menú de cargos: cuadrícula 2 columnas, un color por cargo */
+  .grid-cargos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .btn-cargo {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    min-height: 140px; padding: 20px 8px;
+    border: 2px solid #e2e8f0; border-radius: 16px; background: #fff;
+    font: inherit; font-size: 1rem; font-weight: 600; color: var(--texto); text-align: center; cursor: pointer;
+  }
+  .btn-cargo:active { border-color: var(--azul); background: #eff6ff; }
+  .btn-cargo .icono { width: 60px; height: 60px; border-radius: 18px; display: flex; align-items: center; justify-content: center; }
+  .btn-cargo svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .nota-cargos { text-align: center; color: var(--gris); font-size: .9rem; margin: 16px 0 0; }
+
   .grid-personal {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -413,12 +426,15 @@
   <!-- Paso 1: servicio -->
   <section class="paso" id="paso-servicio">
     <h1>¿A quién quieres calificar hoy?</h1>
-    <button class="btn-servicio" onclick="elegirCargo('recepcion')"><span class="icono">🪪</span> Admisión / Recepción</button>
-    <button class="btn-servicio" onclick="elegirCargo('enfermeria')"><span class="icono">💉</span> Enfermería</button>
-    <button class="btn-servicio" onclick="elegirCargo('medico')"><span class="icono">🩺</span> Médico</button>
-    <button class="btn-servicio" onclick="elegirCargo('obstetra')"><span class="icono">🤰</span> Obstetricia</button>
-    <button class="btn-servicio" onclick="elegirCargo('laboratorio')"><span class="icono">🧪</span> Laboratorio</button>
-    <button class="btn-servicio" onclick="elegirCargo('terapia')"><span class="icono">🦵</span> Terapia física</button>
+    <div class="grid-cargos">
+      <button class="btn-cargo" onclick="elegirCargo('recepcion')"><span class="icono" style="background:#dbeafe;color:#1e40af"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M15 9h3M15 13h3M6 16.5c.6-1.4 1.7-2 3-2s2.4.6 3 2"/></svg></span>Admisión</button>
+      <button class="btn-cargo" onclick="elegirCargo('enfermeria')"><span class="icono" style="background:#ccfbf1;color:#0f766e"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3l4 4M19 5L8 16l-3 1 1-3L17 3M13 7l2 2M10 10l2 2M5.5 18.5L3 21"/></svg></span>Enfermería</button>
+      <button class="btn-cargo" onclick="elegirCargo('medico')"><span class="icono" style="background:#e0e7ff;color:#3730a3"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4H5a1 1 0 0 0-1 1v4a5 5 0 0 0 10 0V5a1 1 0 0 0-1-1h-1"/><path d="M9 14v1a5 5 0 0 0 10 0v-2"/><circle cx="19" cy="11" r="2"/></svg></span>Médico</button>
+      <button class="btn-cargo" onclick="elegirCargo('obstetra')"><span class="icono" style="background:#fce7f3;color:#9d174d"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="4.5" r="2"/><path d="M9 21v-5.5L7.5 15 9 9h3.5c2.5 0 4.5 2 4.5 4.3S15 17 12.5 17V21"/></svg></span>Obstetricia</button>
+      <button class="btn-cargo" onclick="elegirCargo('laboratorio')"><span class="icono" style="background:#dcfce7;color:#166534"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8M9.5 3v5L4.6 17.2A2.5 2.5 0 0 0 6.8 21h10.4a2.5 2.5 0 0 0 2.2-3.8L14.5 8V3"/><path d="M7 14h10"/></svg></span>Laboratorio</button>
+      <button class="btn-cargo" onclick="elegirCargo('terapia')"><span class="icono" style="background:#ffedd5;color:#9a3412"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="15" cy="4" r="2"/><path d="M4 20l5-3.5 2-5 4 3h4M11 11.5L8.5 8 4 9"/></svg></span>Terapia física</button>
+    </div>
+    <p class="nota-cargos">Toca el cargo de la persona que te atendió</p>
   </section>
 
   <!-- Paso 1c: área dentro del cargo (Admisión, Seguros, Pediatría…) -->
