@@ -1,6 +1,6 @@
 # Encuesta de Atención — Clínica Versalles
 
-Encuesta anónima de 30 segundos para que pacientes califiquen la atención en
+Encuesta de 30 segundos para que pacientes califiquen la atención en
 Recepción y Emergencia, con foto y nombre de quien los atendió.
 
 ## Archivos
@@ -61,6 +61,9 @@ navegador (máx 1280px, JPEG 72%). Videos van tal cual con tope de 25MB
 ## Notas
 
 - Anti-duplicados: el mismo celular no puede responder de nuevo por 4 horas (localStorage).
+- Cada respuesta guarda nombre (obligatorio), celular (opcional), `huella` (hash de las características
+  del celular) y `aparato` (id al azar del navegador). El panel lista los celulares con encuestas
+  repetidas. Pendiente: bloquear más de una encuesta por celular cada 3 días.
 - La calificación es de 1 a 5 con caritas; si la nota es 1-3 se piden motivos
   (espera, trato, información, seguro/pago, otro) y comentario opcional.
 - El panel muestra: KPIs, ranking por persona, motivos de queja y comentarios,

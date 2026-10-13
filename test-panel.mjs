@@ -51,3 +51,27 @@ assert.ok(csv.includes('"Cuidado al inyectar";"Respeto a tu privacidad"'), 'colu
 assert.ok(csv.includes('"No respetaron mi privacidad"'), 'motivo con texto de la pregunta');
 assert.ok(descargado.endsWith('.csv'), 'nombre archivo');
 console.log('TODAS LAS PRUEBAS OK');
+
+// Celulares repetidos: mismo celular (huella) con varias encuestas se agrupa y marca las seguidas
+{
+  const src2 = readFileSync('admin.html','utf8').split('<script>')[1].split('</script>')[0];
+  const pintado = {};
+  const el2 = id => ({ ...el(id), set innerHTML(v){ pintado[id] = v; } });
+  global.document = { ...global.document, getElementById: el2, createElement: () => { let t = ''; return { set textContent(v){ t = String(v); }, get innerHTML(){ return t; } }; } };
+  const m2 = new Function(src2 + '; return {render, set todas(v){todas=v}, set periodo(v){periodo=v}};')();
+  const min = n => new Date(Date.now() - n * 60000).toISOString();
+  const base = {servicio:'emergencia', rol:'enfermeria', calificacion:5, motivos:[], adjuntos:[]};
+  m2.todas = [
+    {...base, creado_en:min(5), huella:'aaaa1111', aparato:'x', personal_nombre:'Luz', nombre:'Ana', celular:'987654321'},
+    {...base, creado_en:min(10), huella:'aaaa1111', aparato:'y', personal_nombre:'Luz', nombre:'Bea'},
+    {...base, creado_en:min(600), huella:'aaaa1111', aparato:'x', personal_nombre:'Luz', nombre:'Ana'},
+    {...base, creado_en:min(20), huella:'bbbb2222', aparato:'z', personal_nombre:'Mia', nombre:'Solo'},
+    {...base, creado_en:min(30), personal_nombre:'Vieja sin huella'},
+  ];
+  m2.periodo = 'todo'; m2.render();
+  const h = pintado.repetidos;
+  assert.ok(h.includes('3 encuestas') && h.includes('1 seguidas'), 'agrupa y marca seguidas');
+  assert.ok(h.includes('Luz (3)') && h.includes('Ana, Bea') && h.includes('987654321') && h.includes('2 navegadores'), 'detalle del grupo');
+  assert.ok(!h.includes('Mia') && !h.includes('Vieja'), 'no lista celulares con una sola encuesta');
+  console.log('REPETIDOS OK');
+}
