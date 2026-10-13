@@ -270,7 +270,7 @@
     <div class="tabla" id="motivos"></div>
 
     <h2>Celulares con encuestas repetidas</h2>
-    <p style="color:var(--gris);font-size:.88rem">Un mismo celular con 2 o más encuestas en el período. "Seguidas" = menos de 30 minutos entre una y otra. Solo cuenta encuestas hechas desde que se activó la huella.</p>
+    <p style="color:var(--gris);font-size:.88rem">Un mismo celular con 2 o más encuestas en el período. Solo cuenta una encuesta por celular cada 3 días: las demás se guardan aquí pero no entran al promedio ni al ranking, y quien las envía no recibe ningún aviso. "Seguidas" = menos de 30 minutos entre una y otra. Solo cuenta encuestas hechas desde que se activó la huella.</p>
     <div class="tabla" id="repetidos"></div>
 
     <h2>Comentarios recientes</h2>
@@ -640,6 +640,7 @@ function descargarExcel() {
     ['Nombre', r => r.nombre || ''],
     ['Celular', r => r.celular || ''],
     ['Huella del celular', r => r.huella || ''],
+    ['Cuenta en el ranking', r => r.repetida ? 'No (celular repetido)' : 'Sí'],
   ];
   const celda = v => `"${String(v).replace(/"/g, '""')}"`;
   const filas = [cols.map(c => celda(c[0])).join(';'), ...rs.map(r => cols.map(c => celda(c[1](r))).join(';'))];
@@ -655,9 +656,13 @@ const prom = arr => arr.length ? (arr.reduce((s, r) => s + r.calificacion, 0) / 
 const esc = t => { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
 
 function render() {
-  const rs = filtradas();
+  // Las repetidas (mismo celular en menos de 3 días) se guardan pero no cuentan en promedios ni ranking
+  const delPeriodo = filtradas();
+  const rs = delPeriodo.filter(r => !r.repetida);
+  const noCuentan = delPeriodo.length - rs.length;
   document.getElementById('periodo-texto').textContent =
-    `${AREA_TEXTO[filtro]} · ${rangoActivo().texto} · ${rs.length} respuesta${rs.length === 1 ? '' : 's'}`;
+    `${AREA_TEXTO[filtro]} · ${rangoActivo().texto} · ${rs.length} respuesta${rs.length === 1 ? '' : 's'}` +
+    (noCuentan ? ` · ${noCuentan} no contada${noCuentan === 1 ? '' : 's'} por celular repetido` : '');
 
   const negativas = rs.filter(r => r.calificacion <= 2).length;
   document.getElementById('kpis').innerHTML = `
@@ -717,7 +722,7 @@ function render() {
 
   // Celulares repetidos: agrupa por huella (o por id del navegador si no hubo huella)
   const grupos = {};
-  rs.forEach(r => { const k = r.huella || r.aparato; if (k) (grupos[k] = grupos[k] || []).push(r); });
+  delPeriodo.forEach(r => { const k = r.huella || r.aparato; if (k) (grupos[k] = grupos[k] || []).push(r); });
   const repetidos = Object.entries(grupos).filter(([, g]) => g.length > 1).sort((a, b) => b[1].length - a[1].length);
   const unicos = (g, f) => [...new Set(g.map(f).filter(Boolean))];
   const cuenta = (g, f) => Object.entries(g.reduce((m, r) => { const v = f(r); m[v] = (m[v] || 0) + 1; return m; }, {}))
@@ -732,6 +737,7 @@ function render() {
         <div class="comentario">
           <div class="meta">
             <span class="nota ${seguidas ? 'mala' : 'media'}">${g.length} encuestas</span>
+            <span class="motivo-tag">${g.filter(r => r.repetida).length} no contadas</span>
             ${seguidas ? `<span class="motivo-tag" style="background:#fee2e2;color:#991b1b">${seguidas} seguidas</span>` : ''}
             <span>Promedio ${prom(g).toFixed(1)}</span>
             <span>· ${hora(tiempos[0])} a ${hora(tiempos[tiempos.length - 1])}</span>

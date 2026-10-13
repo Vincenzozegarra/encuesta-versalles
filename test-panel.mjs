@@ -63,7 +63,7 @@ console.log('TODAS LAS PRUEBAS OK');
   const base = {servicio:'emergencia', rol:'enfermeria', calificacion:5, motivos:[], adjuntos:[]};
   m2.todas = [
     {...base, creado_en:min(5), huella:'aaaa1111', aparato:'x', personal_nombre:'Luz', nombre:'Ana', celular:'987654321'},
-    {...base, creado_en:min(10), huella:'aaaa1111', aparato:'y', personal_nombre:'Luz', nombre:'Bea'},
+    {...base, creado_en:min(10), huella:'aaaa1111', aparato:'y', personal_nombre:'Luz', nombre:'Bea', repetida:true},
     {...base, creado_en:min(600), huella:'aaaa1111', aparato:'x', personal_nombre:'Luz', nombre:'Ana'},
     {...base, creado_en:min(20), huella:'bbbb2222', aparato:'z', personal_nombre:'Mia', nombre:'Solo'},
     {...base, creado_en:min(30), personal_nombre:'Vieja sin huella'},
@@ -73,5 +73,7 @@ console.log('TODAS LAS PRUEBAS OK');
   assert.ok(h.includes('3 encuestas') && h.includes('1 seguidas'), 'agrupa y marca seguidas');
   assert.ok(h.includes('Luz (3)') && h.includes('Ana, Bea') && h.includes('987654321') && h.includes('2 navegadores'), 'detalle del grupo');
   assert.ok(!h.includes('Mia') && !h.includes('Vieja'), 'no lista celulares con una sola encuesta');
+  assert.ok(h.includes('1 no contadas'), 'muestra cuántas no cuentan');
+  assert.ok(pintado.kpis.includes('<div class="valor">4</div><div class="nombre">Respuestas</div>'), 'la repetida no entra a los KPIs');
   console.log('REPETIDOS OK');
 }

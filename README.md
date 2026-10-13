@@ -63,7 +63,9 @@ navegador (máx 1280px, JPEG 72%). Videos van tal cual con tope de 25MB
 - Anti-duplicados: el mismo celular no puede responder de nuevo por 4 horas (localStorage).
 - Cada respuesta guarda nombre (obligatorio), celular (opcional), `huella` (hash de las características
   del celular) y `aparato` (id al azar del navegador). El panel lista los celulares con encuestas
-  repetidas. Pendiente: bloquear más de una encuesta por celular cada 3 días.
+  repetidas.
+- Una encuesta por celular cada 3 días: un trigger en la base marca `repetida = true` a las demás.
+  Se guardan igual (sin avisar a quien las envía) pero el panel no las cuenta en promedios ni ranking.
 - La calificación es de 1 a 5 con caritas; si la nota es 1-3 se piden motivos
   (espera, trato, información, seguro/pago, otro) y comentario opcional.
 - El panel muestra: KPIs, ranking por persona, motivos de queja y comentarios,
